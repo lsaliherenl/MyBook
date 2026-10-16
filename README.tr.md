@@ -27,7 +27,7 @@ teslim ve iadeleri onaylar, kitapları açık kitap API'lerinden içe aktarır v
 
 | Katman | Teknoloji |
 |---|---|
-| Web | Next.js, TypeScript, Tailwind CSS, shadcn/ui, next-intl |
+| Web | Next.js 16 (Cache Components), TypeScript, Tailwind CSS, Supabase SSR auth, `[lang]` dil yönlendirmesi |
 | API | NestJS, Prisma |
 | Veritabanı ve depolama | Supabase (PostgreSQL, Storage) |
 | Araçlar | Turborepo monorepo, Docker Compose |
@@ -40,8 +40,29 @@ Gereksinimler: Node.js 22+, pnpm 12, bir Supabase projesi.
 pnpm install
 cp .env.example .env        # ardından değerleri doldurun
 pnpm --filter @mybook/api db:migrate
+pnpm --filter @mybook/api db:seed     # isteğe bağlı: kategoriler + kapaklı ~150 demo kitap
 pnpm dev                    # web → http://localhost:3000 · API → http://localhost:4000/api
 ```
+
+Web uygulamasından üye olduktan sonra kendinize kütüphaneci veya yönetici rolü verin:
+
+```bash
+pnpm --filter @mybook/api user:role siz@ornek.edu.tr ADMIN
+```
+
+### API özeti
+
+| Uç nokta | Erişim |
+|---|---|
+| `GET /api/books?q=&category=&language=&available=&sort=&page=` | herkese açık |
+| `GET /api/books/:slug`, `GET /api/categories` | herkese açık |
+| `GET /api/me`, `PATCH /api/me` | giriş yapmış kullanıcı |
+| `GET /api/admin/import/search?isbn=` veya `?q=` | kütüphaneci |
+| `POST /api/admin/books/import` | kütüphaneci |
+| `GET /api/admin/members`, `PATCH /api/admin/members/:id/role` | kütüphaneci / yönetici |
+
+Web uygulaması kullanıcıları Supabase Auth ile oturum açtırır ve erişim token'ını API'ye iletir; API token'ı projenin
+herkese açık JWKS anahtarlarıyla doğrular ve kullanıcının rolünü `profiles` tablosundan okur.
 
 | Klasör | İçerik |
 |---|---|

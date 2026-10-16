@@ -27,7 +27,7 @@ returns, import books from public book APIs and track overdue loans.
 
 | Layer | Technology |
 |---|---|
-| Web | Next.js, TypeScript, Tailwind CSS, shadcn/ui, next-intl |
+| Web | Next.js 16 (Cache Components), TypeScript, Tailwind CSS, Supabase SSR auth, `[lang]` i18n routing |
 | API | NestJS, Prisma |
 | Database & storage | Supabase (PostgreSQL, Storage) |
 | Tooling | Turborepo monorepo, Docker Compose |
@@ -40,8 +40,29 @@ Requirements: Node.js 22+, pnpm 12, a Supabase project.
 pnpm install
 cp .env.example .env        # then fill in the values
 pnpm --filter @mybook/api db:migrate
+pnpm --filter @mybook/api db:seed     # optional: categories + ~150 demo books with covers
 pnpm dev                    # web → http://localhost:3000 · API → http://localhost:4000/api
 ```
+
+After signing up in the web app, give yourself the librarian or admin role:
+
+```bash
+pnpm --filter @mybook/api user:role you@example.edu ADMIN
+```
+
+### API overview
+
+| Endpoint | Access |
+|---|---|
+| `GET /api/books?q=&category=&language=&available=&sort=&page=` | public |
+| `GET /api/books/:slug`, `GET /api/categories` | public |
+| `GET /api/me`, `PATCH /api/me` | signed in |
+| `GET /api/admin/import/search?isbn=` or `?q=` | librarian |
+| `POST /api/admin/books/import` | librarian |
+| `GET /api/admin/members`, `PATCH /api/admin/members/:id/role` | librarian / admin |
+
+The web app signs users in with Supabase Auth and forwards the access token; the API verifies it against the
+project's public JWKS and reads the user's role from the `profiles` table.
 
 | Path | What it is |
 |---|---|

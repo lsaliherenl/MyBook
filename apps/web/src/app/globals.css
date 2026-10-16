@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Provisional design tokens taken from the reference design (docs/design/claude-design-brief.md).
+ * They will be replaced by the tokens exported from Claude Design.
+ */
+@theme {
+  --color-paper: #f1eae0;
+  --color-paper-2: #e8ded1;
+  --color-plum-900: #2e1424;
+  --color-plum-700: #4a2238;
+  --color-plum-500: #6e3b57;
+  --color-ink: #231a1f;
+  --color-ink-muted: #6b5d63;
+  --color-line: #d6cabb;
+  --color-gold: #b88a4a;
+  --color-danger: #a4442f;
+  --color-success: #5f7a5a;
+
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-plum-500;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility eyebrow {
+  @apply font-sans text-[11px] font-medium uppercase tracking-[0.18em];
 }

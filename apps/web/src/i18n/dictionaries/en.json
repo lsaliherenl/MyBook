@@ -1,0 +1,83 @@
+{
+  "brand": {
+    "name": "MyBook",
+    "tagline": "Books · People · Quiet hours"
+  },
+  "nav": {
+    "catalog": "Catalog",
+    "events": "Events",
+    "about": "About",
+    "signIn": "Sign in",
+    "account": "My account",
+    "signOut": "Sign out",
+    "language": "Türkçe"
+  },
+  "home": {
+    "title": "Read something unexpected.",
+    "subtitle": "Thoughtful books for a more curious, connected life.",
+    "notice": "The interface design is on its way. For now, sign-in and sign-up work."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "fullName": "Full name",
+    "memberType": "Membership",
+    "memberTypes": {
+      "STUDENT": "Student",
+      "ACADEMIC": "Academic",
+      "STAFF": "Staff"
+    },
+    "studentNumber": "Student number",
+    "faculty": "Faculty",
+    "optional": "optional",
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in for your reservations and loans.",
+    "loginButton": "Sign in",
+    "noAccount": "No account yet?",
+    "registerLink": "Join the library",
+    "registerTitle": "Join the library",
+    "registerSubtitle": "Reserve books online, pick them up at the desk.",
+    "registerButton": "Create account",
+    "haveAccount": "Already a member?",
+    "loginLink": "Sign in",
+    "forgotLink": "Forgot password",
+    "forgotTitle": "Forgot your password?",
+    "forgotSubtitle": "Enter your email and we will send you a reset link.",
+    "forgotButton": "Send link",
+    "forgotSent": "If an account exists for this address, a reset link is on its way.",
+    "resetTitle": "Choose a new password",
+    "resetButton": "Update password",
+    "resetDone": "Your password has been updated.",
+    "checkEmail": "Almost there! Click the link in your email to activate your account.",
+    "errors": {
+      "invalid_credentials": "Email or password is incorrect.",
+      "email_not_confirmed": "Please confirm your email address first.",
+      "user_already_exists": "An account with this email already exists.",
+      "weak_password": "Password must be at least 8 characters.",
+      "invalid_input": "Please check the highlighted fields.",
+      "rate_limited": "Too many attempts. Please wait a moment and try again.",
+      "link_invalid": "This link is invalid or has expired. Please request a new one.",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
+  "account": {
+    "title": "My account",
+    "greeting": "Hello, {name}",
+    "card": "Library card",
+    "role": "Role",
+    "roles": {
+      "MEMBER": "Member",
+      "LIBRARIAN": "Librarian",
+      "ADMIN": "Administrator"
+    },
+    "status": "Status",
+    "statuses": {
+      "ACTIVE": "Active",
+      "BLOCKED": "Blocked"
+    },
+    "memberSince": "Member since",
+    "changePassword": "Change password",
+    "apiUnavailable": "Account details cannot be loaded right now. Is the API running?"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "brand": {
+    "name": "MyBook",
+    "tagline": "Kitaplar · İnsanlar · Sessiz saatler"
+  },
+  "nav": {
+    "catalog": "Katalog",
+    "events": "Etkinlikler",
+    "about": "Hakkında",
+    "signIn": "Giriş yap",
+    "account": "Hesabım",
+    "signOut": "Çıkış yap",
+    "language": "English"
+  },
+  "home": {
+    "title": "Beklenmedik bir şey okuyun.",
+    "subtitle": "Daha meraklı, daha bağlantılı bir hayat için özenle seçilmiş kitaplar.",
+    "notice": "Arayüz tasarımı hazırlanıyor. Şimdilik giriş ve kayıt akışı çalışıyor."
+  },
+  "auth": {
+    "email": "E-posta",
+    "password": "Şifre",
+    "newPassword": "Yeni şifre",
+    "fullName": "Ad soyad",
+    "memberType": "Üyelik türü",
+    "memberTypes": {
+      "STUDENT": "Öğrenci",
+      "ACADEMIC": "Akademisyen",
+      "STAFF": "Personel"
+    },
+    "studentNumber": "Öğrenci numarası",
+    "faculty": "Fakülte",
+    "optional": "isteğe bağlı",
+    "loginTitle": "Tekrar hoş geldiniz",
+    "loginSubtitle": "Rezervasyonlarınız ve ödünçleriniz için giriş yapın.",
+    "loginButton": "Giriş yap",
+    "noAccount": "Hesabınız yok mu?",
+    "registerLink": "Üye olun",
+    "registerTitle": "Kütüphaneye üye olun",
+    "registerSubtitle": "Kitapları online ayırtın, gişeden teslim alın.",
+    "registerButton": "Üye ol",
+    "haveAccount": "Zaten üye misiniz?",
+    "loginLink": "Giriş yapın",
+    "forgotLink": "Şifremi unuttum",
+    "forgotTitle": "Şifrenizi mi unuttunuz?",
+    "forgotSubtitle": "E-posta adresinizi yazın, size bir sıfırlama bağlantısı gönderelim.",
+    "forgotButton": "Bağlantı gönder",
+    "forgotSent": "Bu adrese kayıtlı bir hesap varsa sıfırlama bağlantısı gönderildi.",
+    "resetTitle": "Yeni şifre belirleyin",
+    "resetButton": "Şifreyi güncelle",
+    "resetDone": "Şifreniz güncellendi.",
+    "checkEmail": "Neredeyse bitti! Hesabınızı etkinleştirmek için e-postanıza gelen bağlantıya tıklayın.",
+    "errors": {
+      "invalid_credentials": "E-posta veya şifre hatalı.",
+      "email_not_confirmed": "Önce e-posta adresinizi doğrulayın.",
+      "user_already_exists": "Bu e-posta ile kayıtlı bir hesap zaten var.",
+      "weak_password": "Şifre en az 8 karakter olmalı.",
+      "invalid_input": "Lütfen işaretli alanları kontrol edin.",
+      "rate_limited": "Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.",
+      "link_invalid": "Bağlantı geçersiz ya da süresi dolmuş. Lütfen yeniden isteyin.",
+      "unknown": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    }
+  },
+  "account": {
+    "title": "Hesabım",
+    "greeting": "Merhaba, {name}",
+    "card": "Kütüphane kartı",
+    "role": "Rol",
+    "roles": {
+      "MEMBER": "Üye",
+      "LIBRARIAN": "Kütüphaneci",
+      "ADMIN": "Yönetici"
+    },
+    "status": "Durum",
+    "statuses": {
+      "ACTIVE": "Aktif",
+      "BLOCKED": "Engelli"
+    },
+    "memberSince": "Üyelik tarihi",
+    "changePassword": "Şifreyi değiştir",
+    "apiUnavailable": "Hesap bilgileri şu anda yüklenemiyor. API çalışıyor mu?"
+  }
+}

@@ -5,6 +5,7 @@ packages:
 # Packages with install scripts that are allowed (true) or explicitly skipped (false).
 allowBuilds:
   "@prisma/engines": true
+  esbuild: true
   prisma: true
   sharp: false
   unrs-resolver: false

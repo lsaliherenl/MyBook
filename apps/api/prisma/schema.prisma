@@ -149,6 +149,8 @@ model Book {
   openLibraryId  String?      @map("open_library_id")
   appleTrackId   String?      @map("apple_track_id")
   importedById   String?      @map("imported_by_id") @db.Uuid
+  /// foldForSearch(title, subtitle, authors, ISBNs); trigram-indexed for Turkish-insensitive search.
+  searchText     String       @default("") @map("search_text")
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -213,8 +215,8 @@ enum CopyCondition {
 model BookCopy {
   id            String        @id @default(uuid()) @db.Uuid
   bookId        String        @map("book_id") @db.Uuid
-  /// Printed on the spine label and scanned at the desk.
-  barcode       String        @unique
+  /// Printed on the spine label and scanned at the desk (BK0000001, BK0000002, …).
+  barcode       String        @unique @default(dbgenerated("('BK'::text || lpad((nextval('copy_barcode_seq'::regclass))::text, 7, '0'::text))"))
   shelfLocation String?       @map("shelf_location")
   status        CopyStatus    @default(AVAILABLE)
   condition     CopyCondition @default(GOOD)
