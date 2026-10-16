@@ -8,6 +8,11 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toProfileDto } from '../me/profile.mapper.js';
 
+const statusSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('ACTIVE') }),
+  z.object({ status: z.literal('BLOCKED'), reason: z.string().trim().min(3).max(300) }),
+]);
+
 const listQuerySchema = z.object({
   q: z.string().trim().max(120).optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -47,6 +52,24 @@ export class MembersController {
       total,
       totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
     };
+  }
+
+  /** Blocks a member from reserving and borrowing (or lifts the block). */
+  @Patch(':id/status')
+  async setStatus(
+    @CurrentUser() actor: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(statusSchema)) body: z.infer<typeof statusSchema>,
+  ): Promise<ProfileDto> {
+    if (id === actor.id) throw new BadRequestException('You cannot block yourself');
+    const blockedReason = body.status === 'BLOCKED' ? body.reason : null;
+    const [profile] = await this.prisma.$transaction([
+      this.prisma.profile.update({ where: { id }, data: { status: body.status, blockedReason } }),
+      this.prisma.auditLog.create({
+        data: { actorId: actor.id, action: 'member.status', entityType: 'profile', entityId: id, data: body },
+      }),
+    ]);
+    return toProfileDto(profile);
   }
 
   @Patch(':id/role')

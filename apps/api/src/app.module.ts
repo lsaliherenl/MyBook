@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { CirculationModule } from './circulation/circulation.module.js';
 import { HealthController } from './health/health.controller.js';
 import { ImportModule } from './import/import.module.js';
 import { MeController } from './me/me.controller.js';
@@ -13,11 +15,13 @@ import { SupabaseModule } from './supabase/supabase.module.js';
   imports: [
     // One .env for the whole monorepo, at the repository root.
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../../.env'] }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     SupabaseModule,
     AuthModule,
     CatalogModule,
     ImportModule,
+    CirculationModule,
   ],
   controllers: [HealthController, MeController, MembersController],
 })

@@ -59,7 +59,32 @@ pnpm --filter @mybook/api user:role siz@ornek.edu.tr ADMIN
 | `GET /api/me`, `PATCH /api/me` | giriş yapmış kullanıcı |
 | `GET /api/admin/import/search?isbn=` veya `?q=` | kütüphaneci |
 | `POST /api/admin/books/import` | kütüphaneci |
-| `GET /api/admin/members`, `PATCH /api/admin/members/:id/role` | kütüphaneci / yönetici |
+| `GET /api/admin/members`, `PATCH /api/admin/members/:id/status` | kütüphaneci |
+| `PATCH /api/admin/members/:id/role` | yönetici |
+| `GET /api/me/standing`, `/me/reservations`, `/me/loans?status=active\|history`, `/me/fines` | giriş yapmış kullanıcı |
+| `POST /api/reservations` `{ bookIds }`, `DELETE /api/reservations/:id`, `POST /api/loans/:id/renew` | giriş yapmış kullanıcı |
+| `GET /api/admin/desk/lookup?q=` (kart, teslim kodu, öğrenci no, e-posta, ad), `GET /api/admin/desk/members/:id` | kütüphaneci |
+| `POST /api/admin/desk/checkout` `{ memberId, barcode }`, `POST /api/admin/desk/return` `{ barcode }` | kütüphaneci |
+| `POST /api/admin/fines/:id/pay`, `POST /api/admin/fines/:id/waive` | kütüphaneci |
+| `GET /api/admin/reports/dashboard`, `/overdue`, `/overdue.csv`, `/popular` | kütüphaneci |
+| `GET /api/admin/settings`, `PATCH /api/admin/settings` | kütüphaneci / yönetici |
+
+### Ödünç kuralları
+
+Online rezervasyon → bir kopya teslim rafına ayrılır (ya da üye sıraya girer) → kütüphaneci gişede kopyayı okutur →
+ödünç → iade. Varsayılanlar (`library_settings` tablosundan değiştirilebilir): 14 gün ödünç süresi, üye başına 5 kitap
+(ödünçler ve açık rezervasyonlar birlikte), bekleyen yoksa bir kez uzatma, ayrılan kopyayı almak için 48 saat, geciken her
+gün için ₺2,50. Geciken ödüncü, ₺50 ve üzeri ödenmemiş cezası olan ya da elle engellenen üye rezervasyon yapamaz ve ödünç
+alamaz. Alınmayan ayırmalar beş dakikada bir düşürülür ve kopya sıradaki okura geçer.
+
+Reddedilen işlemler HTTP 409 ve sabit bir `code` (ör. `loan_limit_reached`, `copy_reserved_for_another`) ile döner;
+web uygulaması bu kodu çevirir.
+
+### Testler
+
+`pnpm test`, birim testlerini ve ödünç akışının entegrasyon testlerini tüm migration'ların uygulandığı PGlite (WebAssembly
+olarak derlenmiş Postgres) üzerinde çalıştırır; böylece veritabanı kısıtları ve trigger'lar da test edilir. Docker veya
+ayrı bir test veritabanı gerekmez.
 
 Web uygulaması kullanıcıları Supabase Auth ile oturum açtırır ve erişim token'ını API'ye iletir; API token'ı projenin
 herkese açık JWKS anahtarlarıyla doğrular ve kullanıcının rolünü `profiles` tablosundan okur.

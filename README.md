@@ -59,7 +59,31 @@ pnpm --filter @mybook/api user:role you@example.edu ADMIN
 | `GET /api/me`, `PATCH /api/me` | signed in |
 | `GET /api/admin/import/search?isbn=` or `?q=` | librarian |
 | `POST /api/admin/books/import` | librarian |
-| `GET /api/admin/members`, `PATCH /api/admin/members/:id/role` | librarian / admin |
+| `GET /api/admin/members`, `PATCH /api/admin/members/:id/status` | librarian |
+| `PATCH /api/admin/members/:id/role` | admin |
+| `GET /api/me/standing`, `/me/reservations`, `/me/loans?status=active\|history`, `/me/fines` | signed in |
+| `POST /api/reservations` `{ bookIds }`, `DELETE /api/reservations/:id`, `POST /api/loans/:id/renew` | signed in |
+| `GET /api/admin/desk/lookup?q=` (card, pickup code, student no, e-mail, name), `GET /api/admin/desk/members/:id` | librarian |
+| `POST /api/admin/desk/checkout` `{ memberId, barcode }`, `POST /api/admin/desk/return` `{ barcode }` | librarian |
+| `POST /api/admin/fines/:id/pay`, `POST /api/admin/fines/:id/waive` | librarian |
+| `GET /api/admin/reports/dashboard`, `/overdue`, `/overdue.csv`, `/popular` | librarian |
+| `GET /api/admin/settings`, `PATCH /api/admin/settings` | librarian / admin |
+
+### Circulation rules
+
+Reserve online → a copy is put on the hold shelf (or the member joins the queue) → the librarian scans the copy at
+the desk → loan → return. Defaults (editable in `library_settings`): 14-day loans, 5 items per member (loans and open
+reservations together), one renewal unless someone is waiting, 48 hours to pick up a held copy, ₺2.50 per started day
+late. A member with an overdue loan, unpaid fines of ₺50 or more, or a manual block cannot reserve or borrow.
+Uncollected holds expire every five minutes and the copy passes to the next reader in line.
+
+Refusals come back as HTTP 409 with a stable `code` (for example `loan_limit_reached`, `copy_reserved_for_another`)
+that the web app translates.
+
+### Tests
+
+`pnpm test` runs unit tests and circulation integration tests against PGlite (Postgres compiled to WebAssembly) with
+every migration applied, so database constraints and triggers are tested too — no Docker or test database needed.
 
 The web app signs users in with Supabase Auth and forwards the access token; the API verifies it against the
 project's public JWKS and reads the user's role from the `profiles` table.

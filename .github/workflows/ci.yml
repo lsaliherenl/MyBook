@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Typecheck, lint and test need the shared package's build output.
+      - run: pnpm --filter @mybook/shared build
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      # API tests run against an in-memory Postgres (PGlite) with all migrations applied — no services needed.
+      - run: pnpm test
+
+      - run: pnpm build
