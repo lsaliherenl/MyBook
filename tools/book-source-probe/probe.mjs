@@ -262,7 +262,7 @@ async function main() {
   }
   await writeFile(join(OUT, `results${SUFFIX}.json`), JSON.stringify(results, null, 2));
   await writeFile(join(OUT, `report${SUFFIX}.html`), renderReport(results));
-  console.log(`\nWrote ${join(OUT, "report.html")}`);
+  console.log(`\nWrote ${join(OUT, `report${SUFFIX}.html`)}`);
 }
 
 function esc(s) {
