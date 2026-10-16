@@ -32,6 +32,28 @@ teslim ve iadeleri onaylar, kitapları açık kitap API'lerinden içe aktarır v
 | Veritabanı ve depolama | Supabase (PostgreSQL, Storage) |
 | Araçlar | Turborepo monorepo, Docker Compose |
 
+## Kurulum
+
+Gereksinimler: Node.js 22+, pnpm 12, bir Supabase projesi.
+
+```bash
+pnpm install
+cp .env.example .env        # ardından değerleri doldurun
+pnpm --filter @mybook/api db:migrate
+pnpm dev                    # web → http://localhost:3000 · API → http://localhost:4000/api
+```
+
+| Klasör | İçerik |
+|---|---|
+| `apps/web` | Next.js arayüzü |
+| `apps/api` | NestJS API, Prisma şeması ve migration'lar (`prisma/`) |
+| `packages/shared` | Web ve API'nin ortak tip ve sabitleri |
+| `supabase/` | Supabase CLI proje ayarları |
+
+Bazı veritabanı kuralları (kısmi unique index'ler, check kısıtları, Supabase Auth trigger'ı ve satır bazlı güvenlik)
+Prisma şema dilinde ifade edilemediği için ham SQL migration olarak yazıldı. Yeni migration eklerken üretilen SQL'i
+gözden geçirin ki bunlar silinmesin.
+
 ## Dokümantasyon
 
 - UML diyagramları (sınıf, nesne, paket, dağıtım) Mermaid `.mmd` dosyaları olarak [`docs/uml`](docs/uml) altında olacak.

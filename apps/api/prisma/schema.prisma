@@ -1,0 +1,474 @@
+// MyBook data model.
+//
+// Tables live in Supabase's `public` schema and use snake_case names. Users sign up through
+// Supabase Auth (`auth.users`); every auth user gets a matching `profiles` row (see the
+// `supabase_auth_and_rls` migration for the trigger, the foreign key and row level security).
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  runtime                = "nodejs"
+  importFileExtension    = "js"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Membership ──────────────────────────────────────────────────────────────
+
+enum Role {
+  MEMBER
+  LIBRARIAN
+  ADMIN
+}
+
+enum MemberType {
+  STUDENT
+  ACADEMIC
+  STAFF
+}
+
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum Locale {
+  tr
+  en
+}
+
+/// One row per Supabase Auth user; `id` equals `auth.users.id`.
+model Profile {
+  id            String        @id @db.Uuid
+  email         String        @unique
+  fullName      String        @map("full_name")
+  memberType    MemberType    @default(STUDENT) @map("member_type")
+  studentNumber String?       @unique @map("student_number")
+  faculty       String?
+  phone         String?
+  role          Role          @default(MEMBER)
+  status        AccountStatus @default(ACTIVE)
+  blockedReason String?       @map("blocked_reason")
+  /// Printed on the digital library card and encoded in its QR code.
+  /// Sequential (MB00000001, MB00000002, …); the sequence is created in the init migration.
+  cardNumber    String        @unique @default(dbgenerated("('MB'::text || lpad((nextval('card_number_seq'::regclass))::text, 8, '0'::text))")) @map("card_number")
+  locale        Locale        @default(tr)
+  avatarUrl     String?       @map("avatar_url")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  reservations       Reservation[]
+  loans              Loan[]              @relation("LoanMember")
+  checkedOutLoans    Loan[]              @relation("LoanCheckedOutBy")
+  receivedReturns    Loan[]              @relation("LoanReturnedTo")
+  fines              Fine[]              @relation("FineMember")
+  waivedFines        Fine[]              @relation("FineWaivedBy")
+  favorites          Favorite[]
+  eventRegistrations EventRegistration[]
+  auditLogs          AuditLog[]
+  importedBooks      Book[]
+
+  @@index([role])
+  @@map("profiles")
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+model Author {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  bio       String?
+  photoUrl  String?  @map("photo_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  books BookAuthor[]
+
+  @@index([name])
+  @@map("authors")
+}
+
+model Publisher {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  books Book[]
+
+  @@map("publishers")
+}
+
+/// Our own bilingual category tree; categories from book APIs are too noisy to use directly.
+model Category {
+  id       String  @id @default(uuid()) @db.Uuid
+  slug     String  @unique
+  nameTr   String  @map("name_tr")
+  nameEn   String  @map("name_en")
+  parentId String? @map("parent_id") @db.Uuid
+  position Int     @default(0)
+
+  parent   Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[]     @relation("CategoryTree")
+  books    BookCategory[]
+
+  @@map("categories")
+}
+
+enum CoverSource {
+  GOOGLE_BOOKS
+  OPEN_LIBRARY
+  APPLE_BOOKS
+  UPLOAD
+}
+
+/// A catalog record for one edition of a book. Physical copies are `BookCopy` rows.
+model Book {
+  id             String       @id @default(uuid()) @db.Uuid
+  slug           String       @unique
+  isbn13         String?      @unique
+  isbn10         String?
+  title          String
+  subtitle       String?
+  description    String?
+  /// ISO 639-1 code of the book's text, e.g. "tr", "en".
+  language       String       @default("tr")
+  publishedYear  Int?         @map("published_year")
+  pageCount      Int?         @map("page_count")
+  publisherId    String?      @map("publisher_id") @db.Uuid
+  /// Path inside the Supabase Storage `covers` bucket; covers are copied there, never hotlinked.
+  coverPath      String?      @map("cover_path")
+  coverWidth     Int?         @map("cover_width")
+  coverHeight    Int?         @map("cover_height")
+  coverSource    CoverSource? @map("cover_source")
+  googleVolumeId String?      @map("google_volume_id")
+  openLibraryId  String?      @map("open_library_id")
+  appleTrackId   String?      @map("apple_track_id")
+  importedById   String?      @map("imported_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  publisher       Publisher?       @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  importedBy      Profile?         @relation(fields: [importedById], references: [id], onDelete: SetNull)
+  authors         BookAuthor[]
+  categories      BookCategory[]
+  copies          BookCopy[]
+  reservations    Reservation[]
+  favorites       Favorite[]
+  collectionItems CollectionItem[]
+
+  @@index([title])
+  @@index([language])
+  @@map("books")
+}
+
+model BookAuthor {
+  bookId   String @map("book_id") @db.Uuid
+  authorId String @map("author_id") @db.Uuid
+  /// Order of the author on the cover (0 = first).
+  position Int    @default(0)
+
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@id([bookId, authorId])
+  @@index([authorId])
+  @@map("book_authors")
+}
+
+model BookCategory {
+  bookId     String @map("book_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  book     Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, categoryId])
+  @@index([categoryId])
+  @@map("book_categories")
+}
+
+enum CopyStatus {
+  /// On the shelf, can be reserved.
+  AVAILABLE
+  /// Set aside at the desk for a READY reservation.
+  ON_HOLD
+  ON_LOAN
+  IN_REPAIR
+  LOST
+  WITHDRAWN
+}
+
+enum CopyCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+model BookCopy {
+  id            String        @id @default(uuid()) @db.Uuid
+  bookId        String        @map("book_id") @db.Uuid
+  /// Printed on the spine label and scanned at the desk.
+  barcode       String        @unique
+  shelfLocation String?       @map("shelf_location")
+  status        CopyStatus    @default(AVAILABLE)
+  condition     CopyCondition @default(GOOD)
+  notes         String?
+  acquiredAt    DateTime      @default(now()) @map("acquired_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  book         Book          @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  loans        Loan[]
+  reservations Reservation[]
+
+  @@index([bookId, status])
+  @@map("book_copies")
+}
+
+// ─── Circulation ─────────────────────────────────────────────────────────────
+
+enum ReservationStatus {
+  /// Waiting in line until a copy becomes available.
+  PENDING
+  /// A copy is on hold at the desk until `expiresAt`.
+  READY
+  /// The member picked the copy up; a Loan was created.
+  FULFILLED
+  CANCELLED
+  /// Not picked up before `expiresAt`.
+  EXPIRED
+}
+
+/// A member's online request for a title. The librarian turns a READY reservation into a Loan at the desk.
+model Reservation {
+  id          String            @id @default(uuid()) @db.Uuid
+  /// Short pickup code shown to the member (also as a QR code), e.g. "MB-4K7Q".
+  code        String            @unique
+  memberId    String            @map("member_id") @db.Uuid
+  bookId      String            @map("book_id") @db.Uuid
+  /// Assigned when a copy is set aside (status READY).
+  copyId      String?           @map("copy_id") @db.Uuid
+  status      ReservationStatus @default(PENDING)
+  readyAt     DateTime?         @map("ready_at") @db.Timestamptz(6)
+  expiresAt   DateTime?         @map("expires_at") @db.Timestamptz(6)
+  fulfilledAt DateTime?         @map("fulfilled_at") @db.Timestamptz(6)
+  cancelledAt DateTime?         @map("cancelled_at") @db.Timestamptz(6)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  member Profile   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  book   Book      @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  copy   BookCopy? @relation(fields: [copyId], references: [id], onDelete: SetNull)
+  loan   Loan?
+
+  // Queue order for a title is (book_id, created_at) among PENDING rows.
+  @@index([bookId, status, createdAt])
+  @@index([memberId, status])
+  @@map("reservations")
+}
+
+enum LoanStatus {
+  ACTIVE
+  RETURNED
+  LOST
+}
+
+/// A copy in a member's hands. "Overdue" is derived: status ACTIVE and dueAt in the past.
+model Loan {
+  id             String     @id @default(uuid()) @db.Uuid
+  copyId         String     @map("copy_id") @db.Uuid
+  memberId       String     @map("member_id") @db.Uuid
+  reservationId  String?    @unique @map("reservation_id") @db.Uuid
+  status         LoanStatus @default(ACTIVE)
+  checkedOutAt   DateTime   @default(now()) @map("checked_out_at") @db.Timestamptz(6)
+  dueAt          DateTime   @map("due_at") @db.Timestamptz(6)
+  returnedAt     DateTime?  @map("returned_at") @db.Timestamptz(6)
+  renewCount     Int        @default(0) @map("renew_count")
+  checkedOutById String     @map("checked_out_by_id") @db.Uuid
+  returnedToId   String?    @map("returned_to_id") @db.Uuid
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  copy         BookCopy     @relation(fields: [copyId], references: [id], onDelete: Restrict)
+  member       Profile      @relation("LoanMember", fields: [memberId], references: [id], onDelete: Restrict)
+  reservation  Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  checkedOutBy Profile      @relation("LoanCheckedOutBy", fields: [checkedOutById], references: [id], onDelete: Restrict)
+  returnedTo   Profile?     @relation("LoanReturnedTo", fields: [returnedToId], references: [id], onDelete: SetNull)
+  fines        Fine[]
+
+  @@index([memberId, status])
+  @@index([status, dueAt])
+  @@index([copyId])
+  @@map("loans")
+}
+
+enum FineReason {
+  OVERDUE
+  LOST
+  DAMAGED
+}
+
+enum FineStatus {
+  UNPAID
+  PAID
+  WAIVED
+}
+
+model Fine {
+  id         String     @id @default(uuid()) @db.Uuid
+  loanId     String     @map("loan_id") @db.Uuid
+  memberId   String     @map("member_id") @db.Uuid
+  reason     FineReason
+  /// Amount in Turkish lira.
+  amount     Decimal    @db.Decimal(10, 2)
+  status     FineStatus @default(UNPAID)
+  note       String?
+  issuedAt   DateTime   @default(now()) @map("issued_at") @db.Timestamptz(6)
+  paidAt     DateTime?  @map("paid_at") @db.Timestamptz(6)
+  waivedById String?    @map("waived_by_id") @db.Uuid
+
+  loan     Loan     @relation(fields: [loanId], references: [id], onDelete: Restrict)
+  member   Profile  @relation("FineMember", fields: [memberId], references: [id], onDelete: Restrict)
+  waivedBy Profile? @relation("FineWaivedBy", fields: [waivedById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, status])
+  @@map("fines")
+}
+
+// ─── Discovery ───────────────────────────────────────────────────────────────
+
+model Favorite {
+  memberId  String   @map("member_id") @db.Uuid
+  bookId    String   @map("book_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  member Profile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  book   Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, bookId])
+  @@map("favorites")
+}
+
+/// Librarian-curated lists shown on the home page, e.g. "Curated for curious readers".
+model Collection {
+  id            String   @id @default(uuid()) @db.Uuid
+  slug          String   @unique
+  titleTr       String   @map("title_tr")
+  titleEn       String   @map("title_en")
+  descriptionTr String?  @map("description_tr")
+  descriptionEn String?  @map("description_en")
+  isPublished   Boolean  @default(false) @map("is_published")
+  position      Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  items CollectionItem[]
+
+  @@map("collections")
+}
+
+model CollectionItem {
+  collectionId String @map("collection_id") @db.Uuid
+  bookId       String @map("book_id") @db.Uuid
+  position     Int    @default(0)
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  book       Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, bookId])
+  @@map("collection_items")
+}
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
+model Event {
+  id            String    @id @default(uuid()) @db.Uuid
+  slug          String    @unique
+  titleTr       String    @map("title_tr")
+  titleEn       String    @map("title_en")
+  descriptionTr String?   @map("description_tr")
+  descriptionEn String?   @map("description_en")
+  location      String
+  imagePath     String?   @map("image_path")
+  startsAt      DateTime  @map("starts_at") @db.Timestamptz(6)
+  endsAt        DateTime? @map("ends_at") @db.Timestamptz(6)
+  capacity      Int?
+  isPublished   Boolean   @default(false) @map("is_published")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  registrations EventRegistration[]
+
+  @@index([startsAt])
+  @@map("events")
+}
+
+model EventRegistration {
+  eventId   String   @map("event_id") @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  event  Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Profile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, memberId])
+  @@map("event_registrations")
+}
+
+// ─── Administration ──────────────────────────────────────────────────────────
+
+/// Single-row table (id = 1) with the circulation rules the librarian can edit.
+model LibrarySettings {
+  id                 Int      @id @default(1)
+  loanDays           Int      @default(14) @map("loan_days")
+  maxActiveLoans     Int      @default(5) @map("max_active_loans")
+  maxRenewals        Int      @default(1) @map("max_renewals")
+  pickupWindowHours  Int      @default(48) @map("pickup_window_hours")
+  finePerDay         Decimal  @default(2.5) @map("fine_per_day") @db.Decimal(10, 2)
+  fineBlockThreshold Decimal  @default(50) @map("fine_block_threshold") @db.Decimal(10, 2)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("library_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  /// e.g. "loan.checkout", "book.import", "member.block"
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  data       Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor Profile? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum BookSourceProvider {
+  GOOGLE_BOOKS
+  OPEN_LIBRARY
+  APPLE_BOOKS
+}
+
+/// Cached responses from external book APIs, so imports stay fast when a source is slow or flaky.
+model ExternalLookupCache {
+  id        String             @id @default(uuid()) @db.Uuid
+  provider  BookSourceProvider
+  /// Normalised query, e.g. "isbn:9789750747502" or "q:seker portakali vasconcelos".
+  query     String
+  response  Json
+  fetchedAt DateTime           @default(now()) @map("fetched_at") @db.Timestamptz(6)
+
+  @@unique([provider, query])
+  @@map("external_lookup_cache")
+}

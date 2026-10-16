@@ -32,6 +32,28 @@ returns, import books from public book APIs and track overdue loans.
 | Database & storage | Supabase (PostgreSQL, Storage) |
 | Tooling | Turborepo monorepo, Docker Compose |
 
+## Getting started
+
+Requirements: Node.js 22+, pnpm 12, a Supabase project.
+
+```bash
+pnpm install
+cp .env.example .env        # then fill in the values
+pnpm --filter @mybook/api db:migrate
+pnpm dev                    # web → http://localhost:3000 · API → http://localhost:4000/api
+```
+
+| Path | What it is |
+|---|---|
+| `apps/web` | Next.js frontend |
+| `apps/api` | NestJS API, Prisma schema and migrations (`prisma/`) |
+| `packages/shared` | Types and constants shared by web and API |
+| `supabase/` | Supabase CLI project config |
+
+Some database rules (partial unique indexes, check constraints, the Supabase Auth trigger and row level security)
+are written as raw SQL migrations because Prisma's schema language cannot express them. Review generated SQL before
+adding new migrations so they are not dropped.
+
 ## Documentation
 
 - UML diagrams (class, object, package, deployment) will live in [`docs/uml`](docs/uml) as Mermaid `.mmd` files.

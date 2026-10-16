@@ -11,3 +11,4 @@ dist/
 
 # local tool output
 tools/book-source-probe/out/
+*.tsbuildinfo
