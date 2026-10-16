@@ -27,6 +27,11 @@ export class SupabaseService {
     if (error) throw new Error(`Storage upload failed: ${error.message}`);
   }
 
+  async remove(bucket: string, path: string): Promise<void> {
+    const { error } = await this.client.storage.from(bucket).remove([path]);
+    if (error) throw new Error(`Storage delete failed: ${error.message}`);
+  }
+
   publicUrl(bucket: string, path: string): string {
     return `${this.url}/storage/v1/object/public/${bucket}/${path}`;
   }

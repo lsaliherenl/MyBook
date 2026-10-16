@@ -9,6 +9,7 @@ const ALLOWED_HOSTS = [/^books\.google\.com$/, /^books\.googleusercontent\.com$/
 
 const MIN_WIDTH = 250;
 const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_ASPECT = 0.85;
 
 export interface StoredCover {
   path: string;
@@ -30,6 +31,8 @@ export class CoverService {
     const info = readImageInfo(body);
     if (!info) throw new BadRequestException('Cover is not a JPEG, PNG, GIF or WebP image');
     if (info.width < MIN_WIDTH) throw new BadRequestException(`Cover is too small (${info.width}px wide)`);
+    // Book covers are portrait; a square image is a cover padded with blank space (some Apple artwork).
+    if (info.width / info.height > MAX_ASPECT) throw new BadRequestException('Cover image is padded to a square');
     // Google's "image not available" placeholder is a small PNG; real scans are JPEG.
     if (provider === 'GOOGLE_BOOKS' && info.type === 'png' && body.length < 20_000) {
       throw new BadRequestException('Google Books has no cover for this edition');

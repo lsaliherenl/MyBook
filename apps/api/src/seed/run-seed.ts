@@ -1,15 +1,18 @@
 /**
  * Fills the catalog with demo data: categories, ~150 books found through the book providers
  * (Google Books for metadata, Apple Books for covers), demo copies and a staff-picks collection.
- * Safe to run again: existing categories and books are kept.
+ * Safe to run again: existing categories and books are kept; books without a cover get another try.
  *
  *   pnpm --filter @mybook/api db:seed
+ *   pnpm --filter @mybook/api db:seed --refresh-covers   (pick every cover again)
+ *   pnpm --filter @mybook/api db:seed --refresh-small-covers
  */
 import '../network.js';
 import { NestFactory } from '@nestjs/core';
 import { foldForSearch, slugify, type ExternalBookCandidate, type ImportBookInput } from '@mybook/shared';
 import { AppModule } from '../app.module.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { COVERS_BUCKET, SupabaseService } from '../supabase/supabase.service.js';
 import { BookSourceService } from '../import/book-source.service.js';
 import { CoverService } from '../import/cover.service.js';
 import { ImportService } from '../import/import.service.js';
@@ -18,6 +21,10 @@ import { SEED_BOOKS, STAFF_PICKS, type SeedBook } from './books.js';
 import { SEED_CATEGORIES } from './categories.js';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const REFRESH_COVERS = process.argv.includes('--refresh-covers');
+/** Covers narrower than this look soft on high-density screens; a sharper alternative is tried. */
+const GOOD_COVER_WIDTH = 600;
+const REFRESH_SMALL = process.argv.includes('--refresh-small-covers');
 
 function matches(seed: SeedBook, c: ExternalBookCandidate): boolean {
   return titlesMatch(c.title, seed.title) && authorsOverlap(c.authors, seed.authors);
@@ -40,6 +47,7 @@ async function main() {
   const sources = app.get(BookSourceService);
   const imports = app.get(ImportService);
   const covers = app.get(CoverService);
+  const supabase = app.get(SupabaseService);
 
   // Categories
   const categoryIds = new Map<string, string>();
@@ -62,9 +70,10 @@ async function main() {
         searchText: { startsWith: foldForSearch(seed.title) },
         authors: { some: { author: { slug: { in: seed.authors.map(slugify) } } } },
       },
-      select: { id: true, coverPath: true },
+      select: { id: true, coverPath: true, coverWidth: true },
     });
-    if (exists?.coverPath) {
+    const refresh = REFRESH_COVERS || (REFRESH_SMALL && (exists?.coverWidth ?? 0) < GOOD_COVER_WIDTH);
+    if (exists?.coverPath && !refresh) {
       report.existing++;
       continue;
     }
@@ -83,31 +92,47 @@ async function main() {
       continue;
     }
 
-    const coverOptions = [...(a?.covers ?? []), ...(g?.covers ?? [])];
+    // Google's scan belongs to the same printed edition as the metadata; Apple's artwork is sharper
+    // but often an unrelated ebook edition, so it is the fallback.
+    const coverOptions = [...(g?.covers ?? []), ...(a?.covers ?? [])];
 
-    /** Stores the first cover that downloads and passes the checks. */
+    /**
+     * Stores the first cover that passes the checks; when it is small, the remaining candidates
+     * are tried as well and the widest one is kept.
+     */
     const storeFirstCover = async (bookId: string): Promise<boolean> => {
+      let best: { path: string; width: number; height: number; provider: (typeof coverOptions)[number]['provider'] } | null = null;
       for (const option of coverOptions) {
+        if (best && best.width >= GOOD_COVER_WIDTH) break;
         try {
           const cover = await covers.store(bookId, option.url, option.provider);
-          await prisma.book.update({
-            where: { id: bookId },
-            data: { coverPath: cover.path, coverWidth: cover.width, coverHeight: cover.height, coverSource: option.provider },
-          });
-          return true;
+          if (best && cover.width <= best.width) {
+            await supabase.remove(COVERS_BUCKET, cover.path);
+            continue;
+          }
+          if (best) await supabase.remove(COVERS_BUCKET, best.path);
+          best = { ...cover, provider: option.provider };
         } catch (error) {
           console.log(`  cover ${option.provider} failed: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
-      return false;
+      if (!best) return false;
+
+      const previous = await prisma.book.findUnique({ where: { id: bookId }, select: { coverPath: true } });
+      await prisma.book.update({
+        where: { id: bookId },
+        data: { coverPath: best.path, coverWidth: best.width, coverHeight: best.height, coverSource: best.provider },
+      });
+      if (previous?.coverPath) await supabase.remove(COVERS_BUCKET, previous.coverPath);
+      return true;
     };
 
-    // Already imported by an earlier run, but without a cover: only try the cover again.
+    // Already imported by an earlier run: only (re)try the cover.
     if (exists) {
       const ok = await storeFirstCover(exists.id);
       if (!ok) report.noCover.push(label);
       report.existing++;
-      console.log(`↻ ${label}${ok ? ': cover added' : ': still no cover'}`);
+      console.log(`↻ ${label}${ok ? ': cover stored' : ': no cover'}`);
       await sleep(1500);
       continue;
     }
