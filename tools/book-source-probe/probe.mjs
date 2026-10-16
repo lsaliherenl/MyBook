@@ -53,10 +53,16 @@ function request(url, redirects = 5) {
   });
 }
 
-async function getJson(url) {
-  const res = await request(url);
-  if (res.status !== 200) throw new Error(`HTTP ${res.status} ${url}`);
-  return JSON.parse(res.body.toString("utf8"));
+// Google Books intermittently answers 503 for valid queries; retry with backoff.
+async function getJson(url, attempts = 4) {
+  for (let i = 1; ; i++) {
+    const res = await request(url);
+    if (res.status === 200) return JSON.parse(res.body.toString("utf8"));
+    if (![429, 500, 502, 503].includes(res.status) || i >= attempts) {
+      throw new Error(`HTTP ${res.status} after ${i} attempt(s) ${url.replace(/key=[^&]*/, "key=***")}`);
+    }
+    await sleep(1000 * 2 ** (i - 1));
+  }
 }
 
 // --- image size sniffing (JPEG / PNG / GIF / WebP), no dependencies ---------
@@ -112,7 +118,7 @@ const best = (covers) =>
 // --- Google Books -------------------------------------------------------------
 async function googleBooks(c) {
   const key = GOOGLE_KEY ? `&key=${GOOGLE_KEY}` : "";
-  const q = c.isbn ? `isbn:${c.isbn}` : `intitle:${c.title} inauthor:${c.author}`;
+  const q = c.isbn ? `isbn:${c.isbn}` : `${c.title} ${c.author}`;
   const search = await getJson(
     `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5${key}`,
   );
@@ -228,7 +234,11 @@ async function appleBooks(c) {
   };
 }
 
-const PROVIDERS = { google: googleBooks, openlibrary: openLibrary, apple: appleBooks };
+// ONLY=google,apple limits the run to some providers.
+const ALL_PROVIDERS = { google: googleBooks, openlibrary: openLibrary, apple: appleBooks };
+const ONLY = process.env.ONLY?.split(",");
+const SUFFIX = ONLY ? `-${ONLY.join("-")}` : "";
+const PROVIDERS = Object.fromEntries(Object.entries(ALL_PROVIDERS).filter(([k]) => !ONLY || ONLY.includes(k)));
 
 async function main() {
   await mkdir(COVERS, { recursive: true });
@@ -250,8 +260,8 @@ async function main() {
     }
     results.push(row);
   }
-  await writeFile(join(OUT, "results.json"), JSON.stringify(results, null, 2));
-  await writeFile(join(OUT, "report.html"), renderReport(results));
+  await writeFile(join(OUT, `results${SUFFIX}.json`), JSON.stringify(results, null, 2));
+  await writeFile(join(OUT, `report${SUFFIX}.html`), renderReport(results));
   console.log(`\nWrote ${join(OUT, "report.html")}`);
 }
 
@@ -261,6 +271,7 @@ function esc(s) {
 
 function renderReport(results) {
   const cell = (p) => {
+    if (!p) return `<td class="miss">skipped</td>`;
     if (!p.found) return `<td class="miss">miss${p.error ? `<br><small>${esc(p.error)}</small>` : ""}</td>`;
     const b = p.bestCover;
     return `<td>
