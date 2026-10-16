@@ -1,4 +1,4 @@
-# MyBook <sub>(working title)</sub>
+# MyBook
 
 **English** · [Türkçe](README.tr.md)
 

@@ -1,4 +1,4 @@
-# MyBook <sub>(çalışma adı)</sub>
+# MyBook
 
 [English](README.md) · **Türkçe**
 

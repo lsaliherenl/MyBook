@@ -1,14 +1,13 @@
-# Claude Design Brifi — {MARKA} Kütüphane Sistemi
+# Claude Design Brifi — MyBook Kütüphane Sistemi
 
 > **Kullanım:** Claude Design'a ilk mesajda bu brifin tamamını ve `reference-home.webp` görselini birlikte ver.
 > Sonra aşağıdaki **"Prompt sırası"** bölümündeki adımları tek tek iste. Hepsini tek seferde istemek kaliteyi düşürür.
-> `{MARKA}` geçen her yeri seçtiğin isimle değiştir.
 
 ---
 
 ## 0. Proje bağlamı
 
-{MARKA}, bir **üniversite kütüphanesi** için web uygulaması. İki kullanıcı tipi var:
+MyBook, bir **üniversite kütüphanesi** için web uygulaması. İki kullanıcı tipi var:
 
 - **Üye (öğrenci/akademisyen):** kataloğu gezer, kitap arar, ödünç çantasına ekler, online **rezervasyon** yapar,
   kitabı gişeden teslim alır, ödünçlerini/cezalarını/geçmişini takip eder, etkinliklere kayıt olur.
@@ -29,7 +28,8 @@ sıcak, edebi, dergi (editorial) hissi veren, sakin ve lüks bir kitapçı estet
 
 ### Referanstan birebir alınacaklar
 - **Header:** krem zemin; solda geniş harf aralıklı (letter-spaced) serif büyük harf **wordmark**
-  (`PAPER / ROOM` gibi, ortada eğik çizgi), altında çok küçük, geniş aralıklı büyük harf slogan.
+  (referanstaki `PAPER / ROOM` gibi; bizde **`MY / BOOK`**), altında çok küçük, geniş aralıklı büyük harf
+  slogan (ör. `BOOKS · PEOPLE · QUIET HOURS` / `KİTAPLAR · İNSANLAR · SESSİZ SAATLER`). Marka adı yazı içinde "MyBook".
   Ortada/sağda sade nav linkleri (sans-serif, küçük). Sağda ince çizgili arama ve çanta ikonları.
 - **Hero:** tam genişlik, sıcak **altın saat ışığı** fotoğrafı; koyu **mürdüm/patlıcan** duvar, ahşap masa,
   üst üste kitaplar, seramik kupa, çiçek. Solda çok büyük, ince, yüksek kontrastlı **serif başlık** (krem renk,
