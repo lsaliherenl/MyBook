@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Field, FormMessage, SubmitButton } from "@/components/form";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import { updatePassword } from "../../(auth)/actions";
+import { updatePassword } from "@/app/[lang]/(auth)/actions";
 
 export function PasswordForm({ t }: { t: Dictionary["auth"] }) {
   const [state, action] = useActionState(updatePassword, null);

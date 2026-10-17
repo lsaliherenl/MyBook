@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CirculationModule } from './circulation/circulation.module.js';
+import { EventsModule } from './events/events.module.js';
 import { HealthController } from './health/health.controller.js';
 import { ImportModule } from './import/import.module.js';
 import { MeController } from './me/me.controller.js';
@@ -22,6 +23,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     CatalogModule,
     ImportModule,
     CirculationModule,
+    EventsModule,
   ],
   controllers: [HealthController, MeController, MembersController],
 })

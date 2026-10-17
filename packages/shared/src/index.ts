@@ -4,3 +4,4 @@ export * from './profile.js';
 export * from './catalog.js';
 export * from './search.js';
 export * from './circulation.js';
+export * from './events.js';

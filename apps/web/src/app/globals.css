@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 /*
- * Provisional design tokens taken from the reference design (docs/design/claude-design-brief.md).
- * They will be replaced by the tokens exported from Claude Design.
+ * MY / BOOK design tokens, taken one-to-one from the Claude Design system (docs/design/design-progress.md):
+ * cream paper, plum ink, muted status colours. Radius 0 everywhere except inputs and badges (2px).
  */
 @theme {
   --color-paper: #f1eae0;
   --color-paper-2: #e8ded1;
+  --color-paper-3: #faf6f0;
   --color-plum-900: #2e1424;
   --color-plum-700: #4a2238;
   --color-plum-500: #6e3b57;
@@ -14,23 +15,255 @@
   --color-ink-muted: #6b5d63;
   --color-line: #d6cabb;
   --color-gold: #b88a4a;
-  --color-danger: #a4442f;
-  --color-success: #5f7a5a;
 
-  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Text on dark plum blocks (hero, event band, footer) */
+  --color-cream: #f3eadf;
+  --color-cream-2: #efe4d6;
+  --color-mauve: #c9b6bf;
+  --color-mauve-2: #dccbd3;
+
+  --color-available: #3f5e45;
+  --color-available-bg: #dfe5d6;
+  --color-ready: #7a5418;
+  --color-ready-bg: #f1e2c4;
+  --color-loan: #5a2c45;
+  --color-loan-bg: #eadbe2;
+  --color-overdue: #9a3b2a;
+  --color-overdue-bg: #f2d9d0;
+  --color-stone: #5f5a57;
+  --color-stone-bg: #e4dfda;
+
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-jost), system-ui, sans-serif;
+
+  --shadow-cover: 0 1px 2px rgba(35, 26, 31, 0.18), 0 18px 30px -14px rgba(35, 26, 31, 0.45);
+  --shadow-cover-lift: 0 2px 4px rgba(35, 26, 31, 0.18), 0 22px 30px -14px rgba(35, 26, 31, 0.5);
+  --shadow-pop: 0 24px 60px -20px rgba(35, 26, 31, 0.35);
+  --shadow-drawer: -24px 0 60px -20px rgba(35, 26, 31, 0.45);
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-rise: rise 0.8s 0.06s var(--ease-out-soft) backwards;
+  --animate-swap: swap 0.42s var(--ease-out-soft) backwards;
+  --animate-drop: drop 0.22s var(--ease-out-soft) backwards;
+  --animate-zoom: zoom 1.8s var(--ease-out-soft) backwards;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
+  @keyframes swap {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+  }
+  @keyframes zoom {
+    from {
+      transform: scale(1.06);
+    }
+  }
 }
 
 @layer base {
+  html {
+    background: var(--color-paper);
+    scroll-behavior: smooth;
+    interpolate-size: allow-keywords;
+  }
+
   body {
     @apply bg-paper text-ink font-sans antialiased;
+    overflow-x: clip;
   }
 
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-plum-500;
+    outline: 2px solid var(--color-plum-500);
+    outline-offset: 2px;
+  }
+
+  h1 {
+    animation: var(--animate-rise);
+  }
+
+  a,
+  button,
+  summary,
+  input,
+  select,
+  textarea,
+  label {
+    transition:
+      color 0.2s ease,
+      background-color 0.22s ease,
+      border-color 0.22s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s var(--ease-out-soft),
+      opacity 0.2s ease,
+      text-decoration-color 0.2s ease;
+  }
+
+  button:not(:disabled):active {
+    transform: scale(0.97);
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  /* Thin, quiet scrollbars inside panels; the page itself uses the floating thumb (floating-scrollbar.tsx). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .is-scrolling {
+    scrollbar-color: rgba(46, 20, 36, 0.62) transparent;
+  }
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Collapsible sections (FAQ, filters) open with a height animation where the browser supports it. */
+  details:not(.menu)::details-content {
+    block-size: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      block-size 0.45s var(--ease-out-soft),
+      opacity 0.35s ease,
+      content-visibility 0.45s allow-discrete;
+  }
+  details:not(.menu)[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+  details summary {
+    list-style: none;
+  }
+  details summary::-webkit-details-marker {
+    display: none;
   }
 }
 
 @utility eyebrow {
-  @apply font-sans text-[11px] font-medium uppercase tracking-[0.18em];
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* 1280px of content plus the side padding, as in the design (content-box). */
+@utility container-page {
+  box-sizing: content-box;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5.5vw, 80px);
+}
+
+/* Covers lift and tilt slightly when their link is hovered. */
+@utility cover-lift {
+  transition:
+    transform 0.4s var(--ease-out-soft),
+    box-shadow 0.4s ease;
+  :where(a:hover, a:focus-visible) > & {
+    transform: translateY(-6px) rotate(-0.6deg);
+    box-shadow: var(--shadow-cover-lift);
+  }
+}
+
+/* Horizontal shelves on phones: snap to each book, no visible bar. */
+@utility shelf-scroll {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  & > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Icons that pop in on hover (design: "hover simgeleri"). */
+@utility hover-icons {
+  & svg {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6) rotate(-12deg);
+    transition:
+      opacity 0.3s ease,
+      transform 0.45s var(--ease-spring);
+  }
+  :where(.group:hover, .group:focus-within) & svg {
+    opacity: 1;
+    transform: none;
+  }
+  :where(.group:hover, .group:focus-within) & svg:nth-child(2) {
+    transition-delay: 0.06s;
+  }
+  :where(.group:hover, .group:focus-within) & svg:nth-child(3) {
+    transition-delay: 0.12s;
+  }
+}
+
+/* Page transitions: the old page lifts away, the new one rises in. */
+::view-transition-old(.page) {
+  animation: page-out 0.26s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+::view-transition-new(.page) {
+  animation: page-in 0.5s var(--ease-out-soft) both;
+}
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  *::details-content {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Printing the reservation page prints only the pickup pass. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-pass,
+  .print-pass * {
+    visibility: visible;
+  }
+  .print-pass {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 420px;
+    print-color-adjust: exact;
+  }
 }

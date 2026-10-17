@@ -10,6 +10,22 @@ export function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
 }
 
+/** Istanbul has stayed on UTC+3 all year since 2016, so a fixed offset finds local calendar days. */
+const LIBRARY_UTC_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * When a held copy must be collected: `hours` after `from`, not counting Sundays, when the library
+ * is closed. Every Sunday the window touches pushes the deadline back by a day.
+ */
+export function pickupDeadline(from: Date, hours: number): Date {
+  let end = from.getTime() + hours * 60 * 60 * 1000;
+  const firstLocalMidnight = Math.floor((from.getTime() + LIBRARY_UTC_OFFSET_MS) / DAY_MS) * DAY_MS - LIBRARY_UTC_OFFSET_MS;
+  for (let day = firstLocalMidnight; day < end; day += DAY_MS) {
+    if (new Date(day + LIBRARY_UTC_OFFSET_MS).getUTCDay() === 0) end += DAY_MS;
+  }
+  return new Date(end);
+}
+
 /** Started days past the due moment: one minute late counts as one day. */
 export function daysOverdue(dueAt: Date, at: Date): number {
   const late = at.getTime() - dueAt.getTime();

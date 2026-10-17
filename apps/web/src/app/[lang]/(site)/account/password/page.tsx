@@ -1,5 +1,5 @@
 import { getDictionary } from "@/i18n/get-dictionary";
-import { AuthShell } from "../../(auth)/auth-shell";
+import { AuthShell } from "@/app/[lang]/(auth)/auth-shell";
 import { PasswordForm } from "./password-form";
 
 export default async function PasswordPage() {

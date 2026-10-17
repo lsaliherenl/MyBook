@@ -76,6 +76,17 @@ describe('reservations', () => {
     expect(copy.status).toBe('ON_HOLD');
   });
 
+  it('gives books reserved together one pickup code, and the desk finds the member by it', async () => {
+    const ayse = await newMember();
+    const [a, b] = [await createBook(db, 'Huzur', 1), await createBook(db, 'Aylak Adam', 1)];
+
+    const reservations = await circulation.reserve(ayse, [a.id, b.id]);
+
+    expect(new Set(reservations.map((r) => r.code)).size).toBe(1);
+    const found = await desk.lookup(reservations[0].code);
+    expect(found.map((m) => m.id)).toEqual([ayse.id]);
+  });
+
   it('queues readers when every copy is taken', async () => {
     const [a, b, c] = [await newMember(), await newMember(), await newMember()];
     const book = await createBook(db, 'Tutunamayanlar', 1);

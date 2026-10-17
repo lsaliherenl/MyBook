@@ -7,7 +7,7 @@
 import type { CirculationError, LibrarySettingsDto, MemberStandingDto } from '@mybook/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { toSettingsDto } from './circulation.mapper.js';
-import { addHours, daysOverdue, overdueFine } from './rules.js';
+import { daysOverdue, overdueFine, pickupDeadline } from './rules.js';
 
 export type Tx = Prisma.TransactionClient;
 
@@ -49,7 +49,7 @@ export async function holdCopy(tx: Tx, reservationId: string, copyId: string, no
   await tx.bookCopy.update({ where: { id: copyId }, data: { status: 'ON_HOLD' } });
   const r = await tx.reservation.update({
     where: { id: reservationId },
-    data: { status: 'READY', copyId, readyAt: now, expiresAt: addHours(now, settings.pickupWindowHours) },
+    data: { status: 'READY', copyId, readyAt: now, expiresAt: pickupDeadline(now, settings.pickupWindowHours) },
     include: { member: { select: { fullName: true } } },
   });
   return { reservationCode: r.code, memberName: r.member.fullName, expiresAt: r.expiresAt!.toISOString() };

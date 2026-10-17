@@ -1,5 +1,5 @@
 /**
- * Fills the catalog with demo data: categories, ~150 books found through the book providers
+ * Fills the catalog with demo data: categories, library events, ~150 books found through the book providers
  * (Google Books for metadata, Apple Books for covers), demo copies and a staff-picks collection.
  * Safe to run again: existing categories and books are kept; books without a cover get another try.
  *
@@ -19,6 +19,7 @@ import { ImportService } from '../import/import.service.js';
 import { authorsOverlap, titlesMatch } from '../import/matching.js';
 import { SEED_BOOKS, STAFF_PICKS, type SeedBook } from './books.js';
 import { SEED_CATEGORIES } from './categories.js';
+import { seedEvents } from './events.js';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const REFRESH_COVERS = process.argv.includes('--refresh-covers');
@@ -60,6 +61,8 @@ async function main() {
     categoryIds.set(c.slug, row.id);
   }
   console.log(`✓ ${SEED_CATEGORIES.length} categories`);
+
+  await seedEvents(prisma);
 
   const report = { imported: 0, existing: 0, notFound: [] as string[], noCover: [] as string[], failed: [] as string[] };
 

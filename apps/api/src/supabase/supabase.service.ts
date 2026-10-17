@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const COVERS_BUCKET = 'covers';
+export const EVENTS_BUCKET = 'events';
 
 /**
  * Server-side Supabase client — used for Storage uploads only. Storage still requires a JWT,

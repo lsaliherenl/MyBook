@@ -33,7 +33,7 @@ export class DeskService {
     const select = { id: true, fullName: true, email: true, cardNumber: true, studentNumber: true };
 
     if (/^MB-[A-Z0-9]{4}$/i.test(term)) {
-      const r = await this.prisma.reservation.findUnique({ where: { code: term.toUpperCase() }, select: { member: { select } } });
+      const r = await this.prisma.reservation.findFirst({ where: { code: term.toUpperCase() }, select: { member: { select } } });
       return r ? [r.member] : [];
     }
     return this.prisma.profile.findMany({

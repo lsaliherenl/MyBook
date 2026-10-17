@@ -4,6 +4,13 @@ import { z } from 'zod';
 
 export const CATALOG_SORTS = ['relevance', 'title', 'newest', 'popular'] as const;
 
+/** "a,b,c" in the query string → ["a", "b", "c"]; filters accept several values at once. */
+const listFromQuery = (item: z.ZodString, max: number) =>
+  z
+    .string()
+    .transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean))
+    .pipe(z.array(item).max(max));
+
 const booleanFromQuery = z
   .enum(['true', 'false'])
   .transform((v) => v === 'true')
@@ -11,9 +18,18 @@ const booleanFromQuery = z
 
 export const catalogQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
-  category: z.string().trim().max(80).optional(),
-  author: z.string().trim().max(120).optional(),
-  language: z.string().trim().length(2).optional(),
+  /** Comma-separated book IDs, e.g. the borrow bag's contents. */
+  ids: z
+    .string()
+    .transform((s) => s.split(',').filter(Boolean))
+    .pipe(z.array(z.uuid()).max(10))
+    .optional(),
+  /** Category slugs; a book matches if it is in any of them. */
+  category: listFromQuery(z.string().max(80), 20).optional(),
+  /** Author slugs. */
+  author: listFromQuery(z.string().max(120), 20).optional(),
+  /** ISO 639-1 codes. */
+  language: listFromQuery(z.string().length(2), 10).optional(),
   available: booleanFromQuery.optional(),
   yearFrom: z.coerce.number().int().min(0).max(3000).optional(),
   yearTo: z.coerce.number().int().min(0).max(3000).optional(),
@@ -22,6 +38,16 @@ export const catalogQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(48).default(24),
 });
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
+
+export interface CatalogFacetsDto {
+  /** Counts ignore the facet's own filter, so picking one category still shows the others' counts. */
+  categories: { slug: string; count: number }[];
+  languages: { code: string; count: number }[];
+  /** The authors with the most matching books. */
+  authors: { slug: string; name: string; count: number }[];
+  /** Books in the whole catalog, for the "48,210 books" line. */
+  catalogTotal: number;
+}
 
 export interface CategoryDto {
   id: string;
@@ -42,6 +68,10 @@ export interface AvailabilityDto {
   available: number;
   onLoan: number;
   onHold: number;
+  /** Members queued for the next copy that frees up. */
+  waiting: number;
+  /** Earliest due date among copies on loan, when none is on the shelf. */
+  nextDueAt: string | null;
 }
 
 export interface BookSummaryDto {
@@ -66,7 +96,30 @@ export interface BookDetailDto extends BookSummaryDto {
   publisher: string | null;
   pageCount: number | null;
   shelfLocations: string[];
+  /** Every copy in the collection, in barcode order; barcodes stay internal. */
+  copies: { status: 'AVAILABLE' | 'ON_HOLD' | 'ON_LOAN' | 'IN_REPAIR'; shelfLocation: string | null; dueAt: string | null }[];
 }
+
+export interface RelatedBooksDto {
+  moreByAuthor: BookSummaryDto[];
+  /** Books borrowed or reserved by readers of this book; same-subject books fill the gaps. */
+  alsoBorrowed: BookSummaryDto[];
+}
+
+export interface CollectionDto {
+  slug: string;
+  titleTr: string;
+  titleEn: string;
+  descriptionTr: string | null;
+  descriptionEn: string | null;
+  books: BookSummaryDto[];
+}
+
+export const popularBooksQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(30),
+  limit: z.coerce.number().int().min(1).max(24).default(5),
+});
+export type PopularBooksQuery = z.infer<typeof popularBooksQuerySchema>;
 
 export interface Paginated<T> {
   items: T[];

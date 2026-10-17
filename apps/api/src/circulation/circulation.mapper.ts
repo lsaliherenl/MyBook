@@ -59,6 +59,7 @@ export function toLoanDto(
     canRenew:
       l.status === 'ACTIVE' && overdue === 0 && l.renewCount < settings.maxRenewals && !options.bookHasWaitingList,
     daysOverdue: overdue,
+    daysLeft: l.status === 'ACTIVE' ? Math.max(0, Math.ceil((l.dueAt.getTime() - now.getTime()) / 86_400_000)) : 0,
     fineAmount: l.status === 'ACTIVE' ? overdueFine(overdue, settings.finePerDay) : charged,
   };
 }

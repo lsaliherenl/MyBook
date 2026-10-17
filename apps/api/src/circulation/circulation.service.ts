@@ -77,11 +77,11 @@ export class CirculationService {
         if (borrowed > 0) throw new CirculationException('already_borrowed', { bookId });
       }
 
+      // Books reserved together share one pickup code, so the member shows a single pass at the desk.
+      const code = await this.uniqueCode(tx);
       const created: string[] = [];
       for (const bookId of ids) {
-        const reservation = await tx.reservation.create({
-          data: { code: await this.uniqueCode(tx), memberId: member.id, bookId, createdAt: now },
-        });
+        const reservation = await tx.reservation.create({ data: { code, memberId: member.id, bookId, createdAt: now } });
         const copyId = await takeAvailableCopy(tx, bookId);
         if (copyId) await holdCopy(tx, reservation.id, copyId, now, settings);
         created.push(reservation.id);
@@ -335,7 +335,7 @@ export class CirculationService {
   private async uniqueCode(tx: Tx): Promise<string> {
     for (;;) {
       const code = reservationCode();
-      if (!(await tx.reservation.findUnique({ where: { code }, select: { id: true } }))) return code;
+      if (!(await tx.reservation.findFirst({ where: { code }, select: { id: true } }))) return code;
     }
   }
 

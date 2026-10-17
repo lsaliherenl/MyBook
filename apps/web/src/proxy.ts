@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isLocale, LOCALE_COOKIE, localeFromAcceptLanguage } from "./i18n/config";
 
 /** Pages under these paths need a signed-in user. */
-const PROTECTED = ["/account"];
+const PROTECTED = ["/account", "/reservations"];
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

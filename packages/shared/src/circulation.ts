@@ -102,6 +102,8 @@ export interface LoanDto {
   canRenew: boolean;
   /** Whole days past the due date (0 when on time). */
   daysOverdue: number;
+  /** Days until the due date, counting today (0 once it is due or returned). */
+  daysLeft: number;
   /** Fine the loan has run up so far, or was charged on return. */
   fineAmount: number;
 }

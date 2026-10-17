@@ -12,3 +12,6 @@ dist/
 # local tool output
 tools/book-source-probe/out/
 *.tsbuildinfo
+
+# design handoff (third-party photos, kept local until reviewed)
+docs/design/handoff/

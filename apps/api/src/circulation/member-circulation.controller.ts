@@ -18,9 +18,10 @@ export class MemberCirculationController {
     return this.circulation.standing(user.id);
   }
 
+  /** ?status=open limits the list to pending and ready reservations. */
   @Get('me/reservations')
-  reservations(@CurrentUser() user: AuthUser) {
-    return this.circulation.reservationsOf(user.id);
+  reservations(@CurrentUser() user: AuthUser, @Query('status') status?: string) {
+    return this.circulation.reservationsOf(user.id, status === 'open');
   }
 
   @Get('me/loans')

@@ -5,6 +5,8 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Stable refusal code from the API body, e.g. "loan_limit_reached"; the UI translates it. */
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -29,6 +31,11 @@ export async function api<T>(path: string, init: RequestInit & { auth?: boolean 
 
   const base = process.env.API_URL ?? "http://localhost:4000/api";
   const res = await fetch(`${base}${path}`, { ...rest, headers });
-  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText} for ${path}`);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    throw new ApiError(res.status, `${res.status} ${res.statusText} for ${path}`, code);
+  }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }

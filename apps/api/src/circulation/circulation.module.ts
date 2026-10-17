@@ -6,10 +6,11 @@ import { DeskService } from './desk.service.js';
 import { HoldExpiryJob } from './hold-expiry.job.js';
 import { MemberCirculationController } from './member-circulation.controller.js';
 import { ReportsService } from './reports.service.js';
+import { RulesController } from './rules.controller.js';
 import { SettingsService } from './settings.service.js';
 
 @Module({
-  controllers: [MemberCirculationController, DeskController],
+  controllers: [MemberCirculationController, DeskController, RulesController],
   providers: [Clock, CirculationService, DeskService, ReportsService, SettingsService, HoldExpiryJob],
   exports: [CirculationService],
 })

@@ -251,7 +251,8 @@ enum ReservationStatus {
 model Reservation {
   id          String            @id @default(uuid()) @db.Uuid
   /// Short pickup code shown to the member (also as a QR code), e.g. "MB-4K7Q".
-  code        String            @unique
+  /// Books reserved in one go share the code.
+  code        String
   memberId    String            @map("member_id") @db.Uuid
   bookId      String            @map("book_id") @db.Uuid
   /// Assigned when a copy is set aside (status READY).
@@ -272,6 +273,7 @@ model Reservation {
   // Queue order for a title is (book_id, created_at) among PENDING rows.
   @@index([bookId, status, createdAt])
   @@index([memberId, status])
+  @@index([code])
   @@map("reservations")
 }
 
@@ -389,18 +391,30 @@ model CollectionItem {
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 
+enum EventKind {
+  BOOK_CLUB
+  WORKSHOP
+  TALK
+  /// Opening hours, closures and similar announcements; nobody signs up.
+  NOTICE
+}
+
 model Event {
   id            String    @id @default(uuid()) @db.Uuid
   slug          String    @unique
+  kind          EventKind @default(TALK)
   titleTr       String    @map("title_tr")
   titleEn       String    @map("title_en")
   descriptionTr String?   @map("description_tr")
   descriptionEn String?   @map("description_en")
-  location      String
+  locationTr    String    @map("location_tr")
+  locationEn    String    @map("location_en")
   imagePath     String?   @map("image_path")
   startsAt      DateTime  @map("starts_at") @db.Timestamptz(6)
   endsAt        DateTime? @map("ends_at") @db.Timestamptz(6)
+  /// Null means open seating.
   capacity      Int?
+  rsvpRequired  Boolean   @default(true) @map("rsvp_required")
   isPublished   Boolean   @default(false) @map("is_published")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -412,9 +426,11 @@ model Event {
 }
 
 model EventRegistration {
-  eventId   String   @map("event_id") @db.Uuid
-  memberId  String   @map("member_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  eventId    String   @map("event_id") @db.Uuid
+  memberId   String   @map("member_id") @db.Uuid
+  /// Signed up after the event was full; promoted in sign-up order when a seat frees up.
+  waitlisted Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   event  Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   member Profile @relation(fields: [memberId], references: [id], onDelete: Cascade)
