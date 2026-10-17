@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { MapPin } from "lucide-react";
-import type { BookDetailDto, BookSummaryDto, LibrarySettingsDto, RelatedBooksDto } from "@mybook/shared";
+import { Heart, MapPin } from "lucide-react";
+import { FAVORITES_LIST_ID, type BookDetailDto, type BookSummaryDto, type LibrarySettingsDto, type ReadingListDto, type RelatedBooksDto } from "@mybook/shared";
 import { ActionButton } from "@/components/action-button";
 import { AddToBagButton } from "@/components/bag/add-to-bag-button";
 import { AvailabilityText, ShelfCard } from "@/components/book-card";
 import { BookCover } from "@/components/book-cover";
+import { SaveToListMenu } from "@/components/lists/list-controls";
 import { ArrowLink } from "@/components/section-heading";
 import type { Locale } from "@/i18n/config";
 import { format, getDictionary, getLocale, type Dictionary } from "@/i18n/get-dictionary";
@@ -17,6 +18,7 @@ import { getBook, getRules } from "@/lib/catalog";
 import { CATEGORY_ICONS } from "@/lib/category-icons";
 import { formatDay, formatShortDate, formatTime, languageName, localized } from "@/lib/format";
 import { getMemberCirculation, type MemberCirculation } from "@/lib/member";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { renewLoan, reserveBook } from "../../circulation-actions";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/books/[slug]">): Promise<Metadata> {
@@ -127,6 +129,10 @@ async function BookView({ params }: { params: PageProps<"/[lang]/books/[slug]">[
             </Suspense>
           </section>
 
+          <Suspense fallback={<div className="h-11" />}>
+            <SaveToList book={book} t={t} locale={locale} />
+          </Suspense>
+
           <div className="mt-5 flex flex-col gap-4 border-t border-line pt-8">
             <h2 className="m-0 font-serif text-[32px] font-normal">{b.about}</h2>
             {book.description ? (
@@ -167,6 +173,36 @@ async function BookView({ params }: { params: PageProps<"/[lang]/books/[slug]">[
         <Related slug={book.slug} book={book} t={t} locale={locale} />
       </Suspense>
     </>
+  );
+}
+
+/** "Save to a list" for members; visitors get a link to sign in. */
+async function SaveToList({ book, t, locale }: { book: BookDetailDto; t: Dictionary; locale: Locale }) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) {
+    return (
+      <Link
+        href={`/${locale}/login?next=${encodeURIComponent(`/${locale}/books/${book.slug}`)}`}
+        className="group inline-flex h-11 items-center gap-2.5 self-start text-[15px] text-ink no-underline hover:text-plum-500"
+      >
+        <Heart aria-hidden size={20} strokeWidth={1.5} className="group-hover:animate-icon-beat" />
+        {t.lists.signInToSave}
+      </Link>
+    );
+  }
+  const [lists, containing] = await Promise.all([
+    api<ReadingListDto[]>("/me/lists", { auth: true }).catch(() => []),
+    api<string[]>(`/me/lists/containing/${book.id}`, { auth: true }).catch(() => []),
+  ]);
+  return (
+    <SaveToListMenu
+      bookId={book.id}
+      lists={lists.map((l) => ({ id: l.id, name: l.id === FAVORITES_LIST_ID ? t.lists.favorites : l.name }))}
+      initial={containing}
+      labels={t.lists}
+      manageHref={`/${locale}/account/lists`}
+    />
   );
 }
 

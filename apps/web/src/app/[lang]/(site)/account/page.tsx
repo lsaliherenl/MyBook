@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { AccountPageSkeleton } from "@/components/account/page-skeleton";
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import type { FineDto, LibrarySettingsDto, LoanDto, ProfileDto, ReservationDto } from "@mybook/shared";
@@ -31,7 +33,15 @@ function greetingFor(locale: Locale, t: Dictionary["account"]["greeting"]) {
   return { greeting, date };
 }
 
-export default async function AccountOverviewPage() {
+export default function AccountOverviewPage() {
+  return (
+    <Suspense fallback={<AccountPageSkeleton />}>
+      <AccountOverviewPageContent />
+    </Suspense>
+  );
+}
+
+async function AccountOverviewPageContent() {
   const [t, locale] = await Promise.all([getDictionary(), getLocale()]);
   const [profile, circulation, reservations, fines, rules] = await Promise.all([
     api<ProfileDto>("/me", { auth: true }),

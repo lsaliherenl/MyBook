@@ -5,3 +5,4 @@ export * from './catalog.js';
 export * from './search.js';
 export * from './circulation.js';
 export * from './events.js';
+export * from './account.js';

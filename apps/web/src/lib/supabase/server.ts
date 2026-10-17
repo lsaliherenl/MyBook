@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { REMEMBER_COOKIE, remembers, sessionCookieOptions } from "./remember";
 
 export function supabaseEnv() {
@@ -15,6 +16,8 @@ export function supabaseEnv() {
  * `remember` overrides the stored "keep me signed in" choice, e.g. while signing in.
  */
 export async function createSupabaseServerClient({ remember }: { remember?: boolean } = {}) {
+  // The auth client reads the clock while loading the session; keep it out of prerendering.
+  await connection();
   const cookieStore = await cookies();
   const { url, key } = supabaseEnv();
   const persistent = remember ?? remembers(cookieStore.get(REMEMBER_COOKIE)?.value);

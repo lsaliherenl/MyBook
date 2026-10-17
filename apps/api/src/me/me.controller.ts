@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { updateProfileSchema, type ProfileDto, type UpdateProfileInput } from '@mybook/shared';
+import { updateProfileSchema, withDefaultPrefs, type ProfileDto, type UpdateProfileInput } from '@mybook/shared';
 import { CurrentUser } from '../auth/auth.decorators.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
@@ -20,6 +20,9 @@ export class MeController {
     @CurrentUser() user: AuthUser,
     @Body(new ZodValidationPipe(updateProfileSchema)) body: UpdateProfileInput,
   ): Promise<ProfileDto> {
-    return toProfileDto(await this.prisma.profile.update({ where: { id: user.id }, data: body }));
+    const { notificationPrefs, ...rest } = body;
+    // Overdue notices stay on whatever the member sends.
+    const data = notificationPrefs ? { ...rest, notificationPrefs: withDefaultPrefs(notificationPrefs) } : rest;
+    return toProfileDto(await this.prisma.profile.update({ where: { id: user.id }, data }));
   }
 }

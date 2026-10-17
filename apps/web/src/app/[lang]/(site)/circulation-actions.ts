@@ -44,6 +44,19 @@ export async function renewLoan(_prev: ActionState, formData: FormData): Promise
   }
 }
 
+/** "Renew all eligible": renews each listed loan, stopping at the first refusal. */
+export async function renewAll(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const ids = String(formData.get("loanIds")).split(",").filter(Boolean);
+  try {
+    for (const id of ids) await api<LoanDto>(`/loans/${encodeURIComponent(id)}/renew`, { method: "POST", auth: true });
+    refresh();
+    return { error: null, message: String(ids.length) };
+  } catch (error) {
+    refresh();
+    return { error: error instanceof ApiError ? (error.code ?? "unknown") : "unknown" };
+  }
+}
+
 /** Cancels one reservation, or several when `reservationIds` is a comma-separated list (a whole pickup pass). */
 export async function cancelReservation(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const ids = String(formData.get("reservationIds") ?? formData.get("reservationId")).split(",").filter(Boolean);

@@ -1,4 +1,4 @@
-import type { ProfileDto } from '@mybook/shared';
+import { withDefaultPrefs, type ProfileDto } from '@mybook/shared';
 import type { Profile } from '../generated/prisma/client.js';
 
 export function toProfileDto(p: Profile): ProfileDto {
@@ -15,6 +15,7 @@ export function toProfileDto(p: Profile): ProfileDto {
     cardNumber: p.cardNumber,
     locale: p.locale,
     avatarUrl: p.avatarUrl,
+    notificationPrefs: withDefaultPrefs(p.notificationPrefs),
     createdAt: p.createdAt.toISOString(),
   };
 }

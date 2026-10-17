@@ -43,23 +43,25 @@ enum Locale {
 
 /// One row per Supabase Auth user; `id` equals `auth.users.id`.
 model Profile {
-  id            String        @id @db.Uuid
-  email         String        @unique
-  fullName      String        @map("full_name")
-  memberType    MemberType    @default(STUDENT) @map("member_type")
-  studentNumber String?       @unique @map("student_number")
-  faculty       String?
-  phone         String?
-  role          Role          @default(MEMBER)
-  status        AccountStatus @default(ACTIVE)
-  blockedReason String?       @map("blocked_reason")
+  id                String        @id @db.Uuid
+  email             String        @unique
+  fullName          String        @map("full_name")
+  memberType        MemberType    @default(STUDENT) @map("member_type")
+  studentNumber     String?       @unique @map("student_number")
+  faculty           String?
+  phone             String?
+  role              Role          @default(MEMBER)
+  status            AccountStatus @default(ACTIVE)
+  blockedReason     String?       @map("blocked_reason")
   /// Printed on the digital library card and encoded in its QR code.
   /// Sequential (MB00000001, MB00000002, …); the sequence is created in the init migration.
-  cardNumber    String        @unique @default(dbgenerated("('MB'::text || lpad((nextval('card_number_seq'::regclass))::text, 8, '0'::text))")) @map("card_number")
-  locale        Locale        @default(tr)
-  avatarUrl     String?       @map("avatar_url")
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cardNumber        String        @unique @default(dbgenerated("('MB'::text || lpad((nextval('card_number_seq'::regclass))::text, 8, '0'::text))")) @map("card_number")
+  locale            Locale        @default(tr)
+  avatarUrl         String?       @map("avatar_url")
+  /// { [kind]: { email: boolean, push: boolean } }, see NOTIFICATION_KINDS in @mybook/shared.
+  notificationPrefs Json          @default("{}") @map("notification_prefs")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   reservations       Reservation[]
   loans              Loan[]              @relation("LoanMember")
@@ -68,6 +70,7 @@ model Profile {
   fines              Fine[]              @relation("FineMember")
   waivedFines        Fine[]              @relation("FineWaivedBy")
   favorites          Favorite[]
+  readingLists       ReadingList[]
   eventRegistrations EventRegistration[]
   auditLogs          AuditLog[]
   importedBooks      Book[]
@@ -154,14 +157,15 @@ model Book {
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  publisher       Publisher?       @relation(fields: [publisherId], references: [id], onDelete: SetNull)
-  importedBy      Profile?         @relation(fields: [importedById], references: [id], onDelete: SetNull)
-  authors         BookAuthor[]
-  categories      BookCategory[]
-  copies          BookCopy[]
-  reservations    Reservation[]
-  favorites       Favorite[]
-  collectionItems CollectionItem[]
+  publisher        Publisher?        @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  importedBy       Profile?          @relation(fields: [importedById], references: [id], onDelete: SetNull)
+  authors          BookAuthor[]
+  categories       BookCategory[]
+  copies           BookCopy[]
+  reservations     Reservation[]
+  favorites        Favorite[]
+  collectionItems  CollectionItem[]
+  readingListItems ReadingListItem[]
 
   @@index([title])
   @@index([language])
@@ -357,6 +361,34 @@ model Favorite {
 
   @@id([memberId, bookId])
   @@map("favorites")
+}
+
+/// A member's own shelf, e.g. "To read this winter". Favorites live in `Favorite`.
+model ReadingList {
+  id        String   @id @default(uuid()) @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  member Profile           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  items  ReadingListItem[]
+
+  @@index([memberId])
+  @@map("reading_lists")
+}
+
+model ReadingListItem {
+  listId  String   @map("list_id") @db.Uuid
+  bookId  String   @map("book_id") @db.Uuid
+  addedAt DateTime @default(now()) @map("added_at") @db.Timestamptz(6)
+
+  list ReadingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  book Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([listId, bookId])
+  @@index([bookId])
+  @@map("reading_list_items")
 }
 
 /// Librarian-curated lists shown on the home page, e.g. "Curated for curious readers".

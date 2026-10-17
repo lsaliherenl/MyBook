@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AccountModule } from './account/account.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CirculationModule } from './circulation/circulation.module.js';
@@ -24,6 +25,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     ImportModule,
     CirculationModule,
     EventsModule,
+    AccountModule,
   ],
   controllers: [HealthController, MeController, MembersController],
 })

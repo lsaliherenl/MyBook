@@ -12,6 +12,6 @@ import { SettingsService } from './settings.service.js';
 @Module({
   controllers: [MemberCirculationController, DeskController, RulesController],
   providers: [Clock, CirculationService, DeskService, ReportsService, SettingsService, HoldExpiryJob],
-  exports: [CirculationService],
+  exports: [CirculationService, Clock],
 })
 export class CirculationModule {}

@@ -65,7 +65,6 @@ export function LanguageToggle({ label, names }: { label: string; names: Record<
           key={l}
           href={href(l)}
           hrefLang={l}
-          lang={l}
           aria-current={l === current ? "true" : undefined}
           className={`eyebrow inline-flex h-11 items-center px-4.5 no-underline ${
             l === current ? "bg-cream-2 text-plum-900" : "text-cream-2 hover:bg-cream-2/10"
