@@ -1,44 +1,44 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
-import { Field, FormMessage, SubmitButton } from "@/components/form";
+import { Checkbox, Field, FormMessage, PasswordField, SubmitButton } from "@/components/form";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { signIn } from "../actions";
 
 export function LoginForm({ locale, t }: { locale: string; t: Dictionary["auth"] }) {
   const [state, action] = useActionState(signIn, null);
   const params = useSearchParams();
-  const linkError = params.get("error") === "link_invalid";
-  const error = state?.error ?? (linkError ? "link_invalid" : undefined);
+  const error = state?.error ?? (params.get("error") === "link_invalid" ? "link_invalid" : undefined);
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="flex animate-swap flex-col gap-5.5">
       <input type="hidden" name="lang" value={locale} />
       <input type="hidden" name="next" value={params.get("next") ?? ""} />
-      {error ? <FormMessage tone="error">{t.errors[error]}</FormMessage> : null}
-      <Field label={t.email} name="email" type="email" autoComplete="email" required invalid={state?.fields?.includes("email")} />
-      <Field
+      {error && <FormMessage tone="error">{t.errors[error]}</FormMessage>}
+      <Field label={t.email} name="email" type="email" autoComplete="username" required invalid={state?.fields?.includes("email")} />
+      <PasswordField
         label={t.password}
-        name="password"
-        type="password"
+        showLabel={t.showPassword}
+        hideLabel={t.hidePassword}
         autoComplete="current-password"
         required
         invalid={state?.fields?.includes("password")}
-      />
-      <SubmitButton>{t.loginButton} →</SubmitButton>
-      <div className="flex justify-between text-sm text-ink-muted">
-        <Link href={`/${locale}/forgot-password`} className="underline-offset-4 hover:underline">
-          {t.forgotLink}
-        </Link>
-        <span>
-          {t.noAccount}{" "}
-          <Link href={`/${locale}/register`} className="text-plum-700 underline-offset-4 hover:underline">
-            {t.registerLink}
+        aside={
+          <Link href={`/${locale}/forgot-password`} className="text-sm text-ink underline underline-offset-4 hover:text-plum-500">
+            {t.forgotLink}
           </Link>
-        </span>
-      </div>
+        }
+      />
+      <Checkbox name="remember" defaultChecked>
+        <span className="text-[15px]">{t.rememberMe}</span>
+      </Checkbox>
+      <SubmitButton>
+        {t.loginButton}
+        <ArrowRight aria-hidden size={16} strokeWidth={1.5} />
+      </SubmitButton>
     </form>
   );
 }

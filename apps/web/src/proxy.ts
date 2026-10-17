@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isLocale, LOCALE_COOKIE, localeFromAcceptLanguage } from "./i18n/config";
+import { REMEMBER_COOKIE, remembers, sessionCookieOptions } from "./lib/supabase/remember";
 
 /** Pages under these paths need a signed-in user. */
 const PROTECTED = ["/account", "/reservations"];
@@ -20,13 +21,14 @@ export async function proxy(request: NextRequest) {
 
   // 2. Refresh the Supabase session cookies on every request.
   let response = NextResponse.next({ request });
+  const persistent = remembers(request.cookies.get(REMEMBER_COOKIE)?.value);
   const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {
         for (const { name, value } of toSet) request.cookies.set(name, value);
         response = NextResponse.next({ request });
-        for (const { name, value, options } of toSet) response.cookies.set(name, value, options);
+        for (const { name, value, options } of toSet) response.cookies.set(name, value, sessionCookieOptions(options, persistent));
       },
     },
   });

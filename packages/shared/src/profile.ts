@@ -23,9 +23,12 @@ export const updateProfileSchema = z
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 /** Sign-up metadata stored in Supabase Auth and copied into the profile by a database trigger. */
+/** At least 10 characters with one digit; 72 is bcrypt's limit in Supabase Auth. */
+export const passwordSchema = z.string().min(10).max(72).regex(/[0-9]/);
+
 export const signUpSchema = z.object({
   email: z.email(),
-  password: z.string().min(8).max(72),
+  password: passwordSchema,
   fullName: z.string().trim().min(2).max(120),
   memberType: z.enum(MEMBER_TYPES),
   studentNumber: z

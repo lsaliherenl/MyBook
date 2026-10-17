@@ -35,6 +35,7 @@ export function toReservationDto(r: ReservationRow, supabase: SupabaseService, q
     readyAt: r.readyAt?.toISOString() ?? null,
     expiresAt: r.expiresAt?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
+    closedAt: (r.fulfilledAt ?? r.cancelledAt ?? (r.status === 'EXPIRED' ? r.expiresAt : null))?.toISOString() ?? null,
   };
 }
 

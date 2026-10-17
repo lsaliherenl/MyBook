@@ -51,3 +51,9 @@ export function formatMonth(date: Date, locale: Locale): string {
 export function localized<T extends object, K extends string>(record: T, field: K, locale: Locale): T[`${K}Tr` & keyof T] {
   return record[`${field}${locale === "tr" ? "Tr" : "En"}` as `${K}Tr` & keyof T];
 }
+
+/** "Ayşe Yılmaz" → "AY" for avatar circles. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return (parts.length > 1 ? parts[0][0] + parts.at(-1)![0] : name.slice(0, 2)).toLocaleUpperCase("tr");
+}

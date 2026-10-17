@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { format, getDictionary, getLocale, type Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 import { readBag } from "@/lib/bag";
+import { initials } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BagButton, OpenBagButton } from "./bag/bag-drawer";
 import { LanguageLinks, LanguageSwitch } from "./language-switch";
@@ -20,9 +21,7 @@ async function getViewer(): Promise<Viewer | null> {
   if (!data?.claims) return null;
   const meta = (data.claims.user_metadata ?? {}) as { full_name?: string };
   const full = meta.full_name?.trim() || String(data.claims.email ?? "").split("@")[0];
-  const parts = full.split(/\s+/);
-  const initials = (parts.length > 1 ? parts[0][0] + parts.at(-1)![0] : full.slice(0, 2)).toLocaleUpperCase("tr");
-  return { name: parts[0], initials };
+  return { name: full.split(/\s+/)[0], initials: initials(full) };
 }
 
 export async function SiteHeader() {

@@ -1,10 +1,11 @@
 "use server";
 
-import { signUpSchema } from "@mybook/shared";
-import { headers } from "next/headers";
+import { passwordSchema, signUpSchema } from "@mybook/shared";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
+import { REMEMBER_COOKIE } from "@/lib/supabase/remember";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthErrorCode =
@@ -13,7 +14,9 @@ export type AuthErrorCode =
   | "user_already_exists"
   | "weak_password"
   | "invalid_input"
+  | "terms_required"
   | "rate_limited"
+  | "link_invalid"
   | "unknown";
 
 export type AuthFormState = {
@@ -21,6 +24,8 @@ export type AuthFormState = {
   /** Field names that failed validation. */
   fields?: string[];
   done?: boolean;
+  /** The address a confirmation or reset link went to, shown back to the user. */
+  email?: string;
 } | null;
 
 // Root params are not available in Server Actions, so forms send the locale along.
@@ -62,24 +67,37 @@ export async function signIn(_: AuthFormState, formData: FormData): Promise<Auth
   const parsed = credentialsSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: "invalid_input", fields: parsed.error.issues.map((i) => String(i.path[0])) };
 
-  const supabase = await createSupabaseServerClient();
+  const remember = formData.get("remember") === "on";
+  const supabase = await createSupabaseServerClient({ remember });
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: mapError(error.code) };
+  // Remembered so token refreshes later keep the same cookie lifetime.
+  (await cookies()).set(REMEMBER_COOKIE, remember ? "1" : "0", {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    ...(remember && { maxAge: 400 * 24 * 60 * 60 }),
+  });
   redirect(safeNext(formData, locale));
 }
 
 export async function signUp(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const locale = localeOf(formData);
+  if (formData.get("terms") !== "on") return { error: "terms_required", fields: ["terms"] };
   const parsed = signUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
     fullName: formData.get("fullName"),
-    memberType: formData.get("memberType"),
+    memberType: formData.get("memberType") ?? "STUDENT",
     studentNumber: formData.get("studentNumber") ?? "",
     faculty: formData.get("faculty") || undefined,
     locale,
   });
-  if (!parsed.success) return { error: "invalid_input", fields: parsed.error.issues.map((i) => String(i.path[0])) };
+  if (!parsed.success) {
+    const fields = parsed.error.issues.map((i) => String(i.path[0]));
+    return { error: fields.includes("password") ? "weak_password" : "invalid_input", fields };
+  }
 
   const { email, password, fullName, memberType, studentNumber, faculty } = parsed.data;
   const supabase = await createSupabaseServerClient();
@@ -95,7 +113,7 @@ export async function signUp(_: AuthFormState, formData: FormData): Promise<Auth
   if (error) return { error: mapError(error.code) };
   // With e-mail confirmation turned off Supabase signs the user in right away.
   if (data.session) redirect(`/${locale}/account`);
-  return { done: true };
+  return { done: true, email };
 }
 
 export async function requestPasswordReset(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -109,11 +127,11 @@ export async function requestPasswordReset(_: AuthFormState, formData: FormData)
   });
   // Same answer whether or not the address has an account, so accounts cannot be probed.
   if (error && mapError(error.code) === "rate_limited") return { error: "rate_limited" };
-  return { done: true };
+  return { done: true, email: email.data };
 }
 
 export async function updatePassword(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const password = z.string().min(8).max(72).safeParse(formData.get("password"));
+  const password = passwordSchema.safeParse(formData.get("password"));
   if (!password.success) return { error: "weak_password", fields: ["password"] };
 
   const supabase = await createSupabaseServerClient();

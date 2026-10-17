@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
-import { AuthShell } from "../auth-shell";
+import { AuthHeading, AuthTabs } from "../auth-tabs";
 import { RegisterForm } from "./register-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -10,8 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RegisterPage() {
   const [t, locale] = await Promise.all([getDictionary(), getLocale()]);
   return (
-    <AuthShell title={t.auth.registerTitle} subtitle={t.auth.registerSubtitle}>
+    <>
+      <AuthTabs current="register" locale={locale} t={t.auth} />
+      <AuthHeading eyebrow={t.auth.registerEyebrow} title={t.auth.registerTitle} />
       <RegisterForm locale={locale} t={t.auth} />
-    </AuthShell>
+    </>
   );
 }

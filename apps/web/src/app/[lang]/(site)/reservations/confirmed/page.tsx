@@ -156,7 +156,7 @@ async function Confirmation({
                   </span>
                 </div>
                 <span className={`eyebrow text-right text-[10px] ${x.status === "READY" ? "text-ready" : "text-ink-muted"}`}>
-                  {x.status === "READY" ? r.heldForYou : x.status === "PENDING" ? format(r.inQueue, { n: String(x.queuePosition ?? 1) }) : t.account.statuses.ACTIVE}
+                  {x.status === "READY" ? r.heldForYou : x.status === "PENDING" ? format(r.inQueue, { n: String(x.queuePosition ?? 1) }) : t.account.reservationStatus[x.status]}
                 </span>
               </div>
             ))}

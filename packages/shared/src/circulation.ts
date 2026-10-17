@@ -88,6 +88,8 @@ export interface ReservationDto {
   readyAt: string | null;
   expiresAt: string | null;
   createdAt: string;
+  /** When it was collected, cancelled or ran out; null while open. */
+  closedAt: string | null;
 }
 
 export interface LoanDto {
