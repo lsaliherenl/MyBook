@@ -24,6 +24,7 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "db:seed": "nest build && node dist/seed/run-seed.js",
+    "db:seed:collections": "nest build && node dist/seed/run-collections.js",
     "user:role": "nest build && node dist/cli/set-role.js"
   },
   "dependencies": {

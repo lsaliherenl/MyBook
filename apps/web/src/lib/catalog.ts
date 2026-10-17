@@ -6,6 +6,7 @@ import type {
   BookSummaryDto,
   CategoryDto,
   CollectionDto,
+  CollectionSummaryDto,
   EventDetailDto,
   EventDto,
   LibrarySettingsDto,
@@ -20,6 +21,13 @@ import { api } from "./api";
  * cached for minutes; anything that must be exact (the borrow bag, the reservation itself) reads uncached.
  * A failing API yields null/[] so a page can still render its static parts.
  */
+
+export async function getCollections(): Promise<CollectionSummaryDto[] | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("catalog", "collections");
+  return api<CollectionSummaryDto[]>("/collections").catch(() => null);
+}
 
 export async function getCollection(slug: string): Promise<CollectionDto | null> {
   "use cache";

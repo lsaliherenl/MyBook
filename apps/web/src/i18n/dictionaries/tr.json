@@ -1069,5 +1069,32 @@
       "fine_not_unpaid": "Bu ceza zaten kapatılmış.",
       "unknown": "Bir şeyler ters gitti. Lütfen yeniden dene."
     }
+  },
+  "collections": {
+    "breadcrumb": "Gezinti yolu",
+    "eyebrow": "Kütüphanecilerimizin seçtikleri",
+    "title": "Koleksiyonlar",
+    "intro": "Algoritmaların değil insanların bir araya getirdiği raflar — ders rezervleri, okuma halkaları, ödüllü kitaplar ve arşivin sessiz köşeleri.",
+    "count": "{count} koleksiyon",
+    "featured": "Öne çıkan koleksiyon · {count}",
+    "books": "{count} kitap",
+    "oneBook": "1 kitap",
+    "browse": "Koleksiyona göz at",
+    "all": "Tüm koleksiyonlar",
+    "filterLabel": "Koleksiyonları süz",
+    "kinds": {
+      "ALL": "Tümü",
+      "COURSE": "Ders rezervleri",
+      "LITERATURE": "Edebiyat",
+      "SCIENCE": "Fen",
+      "NEW": "Yeni",
+      "SPECIAL": "Özel"
+    },
+    "empty": "Bu grupta henüz koleksiyon yok.",
+    "teachTitle": "Ders mi veriyorsunuz?",
+    "teachText": "Okuma listenizi gönderin — bir hafta içinde ders rezerv rafını hazırlayalım.",
+    "contact": "Kütüphaneyle iletişime geç",
+    "unavailable": "Koleksiyonlar şu an yüklenemiyor. Lütfen birazdan yeniden dene.",
+    "emptyCollection": "Bu koleksiyon şimdilik boş."
   }
 }

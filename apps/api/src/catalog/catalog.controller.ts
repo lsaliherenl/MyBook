@@ -35,6 +35,11 @@ export class CatalogController {
     return this.catalog.related(slug);
   }
 
+  @Get('collections')
+  collections() {
+    return this.catalog.collections();
+  }
+
   @Get('collections/:slug')
   collection(@Param('slug') slug: string) {
     return this.catalog.collection(slug);

@@ -7,12 +7,13 @@ import {
   type CatalogQuery,
   type CategoryDto,
   type CollectionDto,
+  type CollectionSummaryDto,
   type Paginated,
   type PopularBookDto,
   type PopularBooksQuery,
   type RelatedBooksDto,
 } from '@mybook/shared';
-import type { Prisma } from '../generated/prisma/client.js';
+import type { Collection, Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { bookInclude, toBookDetail, toBookSummary } from './book.mapper.js';
@@ -157,6 +158,23 @@ export class CatalogService {
     };
   }
 
+  /** Published collections in page order, each with its size and first three books. */
+  async collections(): Promise<CollectionSummaryDto[]> {
+    const rows = await this.prisma.collection.findMany({
+      where: { isPublished: true },
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        _count: { select: { items: true } },
+        items: { orderBy: { position: 'asc' }, take: 3, include: { book: { include: bookInclude } } },
+      },
+    });
+    return rows.map((c) => ({
+      ...collectionFields(c),
+      bookCount: c._count.items,
+      covers: c.items.map(({ book }) => toBookSummary(book, this.supabase)),
+    }));
+  }
+
   async collection(slug: string): Promise<CollectionDto> {
     const collection = await this.prisma.collection.findFirst({
       where: { slug, isPublished: true },
@@ -164,11 +182,8 @@ export class CatalogService {
     });
     if (!collection) throw new NotFoundException('Collection not found');
     return {
-      slug: collection.slug,
-      titleTr: collection.titleTr,
-      titleEn: collection.titleEn,
-      descriptionTr: collection.descriptionTr,
-      descriptionEn: collection.descriptionEn,
+      ...collectionFields(collection),
+      bookCount: collection.items.length,
       books: collection.items.map(({ book }) => toBookSummary(book, this.supabase)),
     };
   }
@@ -227,4 +242,18 @@ function buildWhere(query: CatalogQuery, omit?: 'category' | 'author' | 'languag
   if (query.yearFrom) and.push({ publishedYear: { gte: query.yearFrom } });
   if (query.yearTo) and.push({ publishedYear: { lte: query.yearTo } });
   return { AND: and };
+}
+
+function collectionFields(c: Collection): Omit<CollectionSummaryDto, 'bookCount' | 'covers'> {
+  return {
+    slug: c.slug,
+    kind: c.kind,
+    titleTr: c.titleTr,
+    titleEn: c.titleEn,
+    descriptionTr: c.descriptionTr,
+    descriptionEn: c.descriptionEn,
+    curatorTr: c.curatorTr,
+    curatorEn: c.curatorEn,
+    featured: c.isFeatured,
+  };
 }

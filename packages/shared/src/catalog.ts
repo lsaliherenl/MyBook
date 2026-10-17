@@ -106,12 +106,26 @@ export interface RelatedBooksDto {
   alsoBorrowed: BookSummaryDto[];
 }
 
-export interface CollectionDto {
+export const COLLECTION_KINDS = ['COURSE', 'LITERATURE', 'SCIENCE', 'NEW', 'SPECIAL'] as const;
+export type CollectionKind = (typeof COLLECTION_KINDS)[number];
+
+/** A shelf on the collections page. */
+export interface CollectionSummaryDto {
   slug: string;
+  kind: CollectionKind;
   titleTr: string;
   titleEn: string;
   descriptionTr: string | null;
   descriptionEn: string | null;
+  curatorTr: string | null;
+  curatorEn: string | null;
+  featured: boolean;
+  bookCount: number;
+  /** The first few books, for the cover stack. */
+  covers: BookSummaryDto[];
+}
+
+export interface CollectionDto extends Omit<CollectionSummaryDto, 'covers'> {
   books: BookSummaryDto[];
 }
 

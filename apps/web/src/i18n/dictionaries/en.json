@@ -1069,5 +1069,32 @@
       "fine_not_unpaid": "This fine has already been settled.",
       "unknown": "Something went wrong. Please try again."
     }
+  },
+  "collections": {
+    "breadcrumb": "Breadcrumb",
+    "eyebrow": "Curated by our librarians",
+    "title": "Collections",
+    "intro": "Shelves put together by people, not algorithms — course reserves, reading circles, prize winners and the quiet corners of the archive.",
+    "count": "{count} collections",
+    "featured": "Featured collection · {count}",
+    "books": "{count} books",
+    "oneBook": "1 book",
+    "browse": "Browse the collection",
+    "all": "All collections",
+    "filterLabel": "Filter collections",
+    "kinds": {
+      "ALL": "All",
+      "COURSE": "Course reserves",
+      "LITERATURE": "Literature",
+      "SCIENCE": "Science",
+      "NEW": "New",
+      "SPECIAL": "Special"
+    },
+    "empty": "No collections in this group yet.",
+    "teachTitle": "Teaching a course?",
+    "teachText": "Send us your reading list — we’ll build a course reserve shelf within a week.",
+    "contact": "Contact the library",
+    "unavailable": "Collections can't be loaded right now. Please try again shortly.",
+    "emptyCollection": "This collection is empty for now."
   }
 }

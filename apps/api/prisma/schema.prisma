@@ -393,15 +393,29 @@ model ReadingListItem {
 }
 
 /// Librarian-curated lists shown on the home page, e.g. "Curated for curious readers".
+enum CollectionKind {
+  COURSE
+  LITERATURE
+  SCIENCE
+  NEW
+  SPECIAL
+}
+
 model Collection {
-  id            String   @id @default(uuid()) @db.Uuid
-  slug          String   @unique
-  titleTr       String   @map("title_tr")
-  titleEn       String   @map("title_en")
-  descriptionTr String?  @map("description_tr")
-  descriptionEn String?  @map("description_en")
-  isPublished   Boolean  @default(false) @map("is_published")
-  position      Int      @default(0)
+  id            String         @id @default(uuid()) @db.Uuid
+  slug          String         @unique
+  kind          CollectionKind @default(LITERATURE)
+  titleTr       String         @map("title_tr")
+  titleEn       String         @map("title_en")
+  descriptionTr String?        @map("description_tr")
+  descriptionEn String?        @map("description_en")
+  /// Who put the shelf together, e.g. "Türk Edebiyatı Okuma Grubu".
+  curatorTr     String?        @map("curator_tr")
+  curatorEn     String?        @map("curator_en")
+  /// Shown as the large band on the collections page (the first featured one by position).
+  isFeatured    Boolean        @default(false) @map("is_featured")
+  isPublished   Boolean        @default(false) @map("is_published")
+  position      Int            @default(0)
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

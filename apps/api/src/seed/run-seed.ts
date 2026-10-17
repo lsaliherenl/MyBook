@@ -1,6 +1,6 @@
 /**
  * Fills the catalog with demo data: categories, library events, ~150 books found through the book providers
- * (Google Books for metadata, Apple Books for covers), demo copies and a staff-picks collection.
+ * (Google Books for metadata, Apple Books for covers), demo copies and the collections.
  * Safe to run again: existing categories and books are kept; books without a cover get another try.
  *
  *   pnpm --filter @mybook/api db:seed
@@ -17,8 +17,9 @@ import { BookSourceService } from '../import/book-source.service.js';
 import { CoverService } from '../import/cover.service.js';
 import { ImportService } from '../import/import.service.js';
 import { authorsOverlap, titlesMatch } from '../import/matching.js';
-import { SEED_BOOKS, STAFF_PICKS, type SeedBook } from './books.js';
+import { SEED_BOOKS, type SeedBook } from './books.js';
 import { SEED_CATEGORIES } from './categories.js';
+import { seedCollections } from './collections.js';
 import { seedEvents } from './events.js';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -179,27 +180,8 @@ async function main() {
     await sleep(1500); // Apple's search API allows roughly 20 requests a minute.
   }
 
-  // Staff picks collection for the home page
-  const picks = [];
-  for (const title of STAFF_PICKS) {
-    const book = await prisma.book.findFirst({ where: { searchText: { startsWith: foldForSearch(title) } }, select: { id: true } });
-    if (book) picks.push(book.id);
-  }
-  const collection = await prisma.collection.upsert({
-    where: { slug: 'staff-picks' },
-    create: {
-      slug: 'staff-picks',
-      titleTr: 'Meraklı okurlar için',
-      titleEn: 'Curated for curious readers',
-      descriptionTr: 'Kütüphanecilerimizin bu ay elinden bırakamadıkları.',
-      descriptionEn: 'What our librarians could not put down this month.',
-      isPublished: true,
-    },
-    update: {},
-  });
-  await prisma.collectionItem.deleteMany({ where: { collectionId: collection.id } });
-  await prisma.collectionItem.createMany({ data: picks.map((bookId, position) => ({ collectionId: collection.id, bookId, position })) });
-  console.log(`✓ staff picks: ${picks.length} books`);
+  // Staff picks (home page) and the other collections, built from the books above.
+  await seedCollections(prisma);
 
   // After the books, so events can point at the book to bring.
   await seedEvents(prisma);
