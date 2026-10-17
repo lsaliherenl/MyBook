@@ -9,17 +9,40 @@ export const createReservationsSchema = z.object({
 });
 export type CreateReservationsInput = z.infer<typeof createReservationsSchema>;
 
+const barcodeSchema = z.string().trim().toUpperCase().min(3).max(32);
+
 /** At the desk: the member (card number, reservation code, e-mail or student number) and the scanned copy. */
 export const checkoutSchema = z.object({
   memberId: z.uuid(),
-  barcode: z.string().trim().toUpperCase().min(3).max(32),
+  barcode: barcodeSchema,
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
-export const returnSchema = z.object({
-  barcode: z.string().trim().toUpperCase().min(3).max(32),
+/**
+ * Every copy the member takes in one visit, lent together or not at all. `override` (admins only)
+ * lends despite fines over the limit; it is written to the audit log.
+ */
+export const checkoutManySchema = z.object({
+  memberId: z.uuid(),
+  barcodes: z.array(barcodeSchema).min(1).max(10),
+  override: z.boolean().default(false),
 });
-export type ReturnInput = z.infer<typeof returnSchema>;
+export type CheckoutManyInput = z.infer<typeof checkoutManySchema>;
+
+/** How the copy came back. A damaged copy goes to repair instead of the shelf or the next reader. */
+export const RETURN_CONDITIONS = ['same', 'worn', 'damaged'] as const;
+export type ReturnCondition = (typeof RETURN_CONDITIONS)[number];
+
+export const returnSchema = z.object({
+  barcode: barcodeSchema,
+  condition: z.enum(RETURN_CONDITIONS).default('same'),
+});
+export type ReturnInput = z.input<typeof returnSchema>;
+
+/** A scanned copy before anything happens; with `memberId`, whether it can be lent to that member. */
+export const deskCopyQuerySchema = z.object({
+  memberId: z.uuid().optional(),
+});
 
 export const deskLookupSchema = z.object({
   q: z.string().trim().min(2).max(120),
@@ -133,12 +156,23 @@ export interface MemberStandingDto {
   blockedReason: CirculationError | null;
 }
 
+/** A member found at the desk by card, pickup code, student number, e-mail or name. */
+export interface DeskMemberMatchDto {
+  id: string;
+  fullName: string;
+  email: string;
+  cardNumber: string;
+  studentNumber: string | null;
+}
+
 export interface DeskMemberDto {
   id: string;
   fullName: string;
   email: string;
   cardNumber: string;
   studentNumber: string | null;
+  memberType: 'STUDENT' | 'ACADEMIC' | 'STAFF';
+  faculty: string | null;
   status: 'ACTIVE' | 'BLOCKED';
   standing: MemberStandingDto;
   readyReservations: ReservationDto[];
@@ -172,15 +206,90 @@ export interface OverdueRowDto {
   accruedFine: number;
 }
 
+export interface CheckoutManyResultDto {
+  loans: LoanDto[];
+  /** Pickup codes of the reservations these checkouts fulfilled. */
+  reservationCodes: string[];
+  dueAt: string;
+}
+
+export type CopyStatus = 'AVAILABLE' | 'ON_HOLD' | 'ON_LOAN' | 'IN_REPAIR' | 'LOST' | 'WITHDRAWN';
+
+/** What the desk sees after scanning a copy, before checking it out or in. */
+export interface DeskCopyDto {
+  barcode: string;
+  status: CopyStatus;
+  shelfLocation: string | null;
+  book: BookSummaryDto;
+  /** The open loan, when the copy is out. */
+  loan: {
+    id: string;
+    memberId: string;
+    memberName: string;
+    checkedOutAt: string;
+    dueAt: string;
+    daysOverdue: number;
+    /** Fine the return would charge now. */
+    fine: number;
+  } | null;
+  /** Who gets this copy next if it comes back now. */
+  nextReader: { reservationCode: string; memberName: string } | null;
+  /** With a member: why this copy cannot be lent to them, or null when it can. */
+  checkoutRefusal: CirculationError | null;
+}
+
+/** One pickup code waiting at (or collected from) the hold shelf today. */
+export interface DeskPickupDto {
+  code: string;
+  memberId: string;
+  memberName: string;
+  books: string[];
+  status: 'READY' | 'COLLECTED';
+  /** Earliest deadline among the books still on the shelf. */
+  expiresAt: string | null;
+  collectedAt: string | null;
+}
+
+export interface DeskActivityDto {
+  id: string;
+  at: string;
+  kind: 'out' | 'in' | 'hold';
+  bookTitle: string;
+  memberName: string;
+  /** Pickup code for checkouts of a reservation and for new holds. */
+  code: string | null;
+  /** Fine charged on return. */
+  fine: number | null;
+}
+
+export interface DeskTodayDto {
+  pickups: DeskPickupDto[];
+  /** Pickup codes whose deadline falls before the library closes today. */
+  expiringToday: number;
+  recent: DeskActivityDto[];
+}
+
 export interface DashboardDto {
   activeLoans: number;
+  /** Active loans at this moment a week ago, for the trend. */
+  activeLoansWeekAgo: number;
   overdueLoans: number;
   awaitingPickup: number;
+  /** Ready reservations whose pickup window ends today. */
+  expiringToday: number;
   waitingList: number;
   newMembersThisWeek: number;
   unpaidFinesTotal: number;
   /** Checkouts per ISO week, oldest first. */
   loansPerWeek: { weekStart: string; count: number }[];
+  /** This week, Monday to Sunday (library time). */
+  week: { date: string; checkouts: number; returns: number }[];
+  /** Members whose unpaid and running fines reach the borrowing limit. */
+  membersOverLimit: { count: number; limit: number; names: string[] };
+  /** The title with the most readers waiting. */
+  longestWaitlist: { title: string; slug: string; waiting: number } | null;
+  /** Loans more than two weeks overdue. */
+  longOverdue: number;
 }
 
 export interface PopularBookDto {

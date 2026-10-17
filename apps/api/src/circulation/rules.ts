@@ -13,6 +13,23 @@ export function addHours(date: Date, hours: number): Date {
 /** Istanbul has stayed on UTC+3 all year since 2016, so a fixed offset finds local calendar days. */
 const LIBRARY_UTC_OFFSET_MS = 3 * 60 * 60 * 1000;
 
+/** The moment the library's calendar day containing `date` began. */
+export function libraryDayStart(date: Date): Date {
+  return new Date(Math.floor((date.getTime() + LIBRARY_UTC_OFFSET_MS) / DAY_MS) * DAY_MS - LIBRARY_UTC_OFFSET_MS);
+}
+
+/** The library's calendar date of `date`, as YYYY-MM-DD. */
+export function libraryDate(date: Date): string {
+  return new Date(date.getTime() + LIBRARY_UTC_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** Monday 00:00 (library time) of the week containing `date`. */
+export function libraryWeekStart(date: Date): Date {
+  const today = libraryDayStart(date);
+  const weekday = new Date(today.getTime() + LIBRARY_UTC_OFFSET_MS).getUTCDay() || 7;
+  return addDays(today, 1 - weekday);
+}
+
 /**
  * When a held copy must be collected: `hours` after `from`, not counting Sundays, when the library
  * is closed. Every Sunday the window touches pushes the deadline back by a day.

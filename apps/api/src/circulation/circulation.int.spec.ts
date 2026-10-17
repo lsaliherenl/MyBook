@@ -311,3 +311,123 @@ describe('desk lookup and reports', () => {
     expect(popular).toMatchObject({ loans: 1, book: { title: 'Fatih-Harbiye' } });
   });
 });
+
+describe('circulation desk screen', () => {
+  it('lends every copy of a visit together, or none of them', async () => {
+    const [a, b] = [await newMember(), await newMember()];
+    const [mine, theirs] = [await createBook(db, 'Tutunamayanlar', 1), await createBook(db, 'Saatleri Ayarlama Enstitüsü', 1)];
+    const [r] = await circulation.reserve(a, [mine.id]);
+    await circulation.reserve(b, [theirs.id]);
+
+    await expectRefused(
+      circulation.checkoutMany(librarian, a.id, [mine.copies[0].barcode, theirs.copies[0].barcode]),
+      'copy_reserved_for_another',
+    );
+    expect(await db.prisma.loan.count()).toBe(0);
+    expect((await circulation.reservationsOf(a.id))[0].status).toBe('READY');
+
+    const result = await circulation.checkoutMany(librarian, a.id, [mine.copies[0].barcode.toLowerCase()]);
+    expect(result.loans).toHaveLength(1);
+    expect(result.reservationCodes).toEqual([r.code]);
+    expect(result.dueAt).toBe(new Date(clock.current.getTime() + 14 * DAY).toISOString());
+  });
+
+  it('only an admin can lend past the fine limit', async () => {
+    const ayse = await newMember();
+    const admin = asUser(await createMember(db, { role: 'ADMIN', name: 'Zeynep Arslan' }));
+    const [lent, wanted] = [await createBook(db, 'Çalıkuşu', 1), await createBook(db, 'Sinekli Bakkal', 1)];
+    await circulation.checkout(librarian, ayse.id, lent.copies[0].barcode);
+    clock.advance(14 * DAY + 25 * DAY);
+    await circulation.returnCopy(librarian, lent.copies[0].barcode);
+
+    await expectRefused(circulation.checkoutMany(librarian, ayse.id, [wanted.copies[0].barcode]), 'fines_over_limit');
+    await expect(circulation.checkoutMany(librarian, ayse.id, [wanted.copies[0].barcode], true)).rejects.toThrow(/admin/);
+    const { loans } = await circulation.checkoutMany(admin, ayse.id, [wanted.copies[0].barcode], true);
+    expect(loans).toHaveLength(1);
+  });
+
+  it('previews a scanned copy: who has it, the fine so far, who is next and whether a member may take it', async () => {
+    const [a, b] = [await newMember(), await createMember(db, { name: 'Can Öztürk' })];
+    const book = await createBook(db, 'Beyaz Kale', 1);
+    await circulation.checkout(librarian, a.id, book.copies[0].barcode);
+    const [next] = await circulation.reserve(asUser(b), [book.id]);
+    clock.advance(16 * DAY);
+
+    const copy = await circulation.deskCopy(book.copies[0].barcode, b.id);
+    expect(copy).toMatchObject({
+      status: 'ON_LOAN',
+      book: { title: 'Beyaz Kale' },
+      loan: { memberId: a.id, daysOverdue: 2, fine: 5 },
+      nextReader: { reservationCode: next.code, memberName: 'Can Öztürk' },
+      checkoutRefusal: 'copy_on_loan',
+    });
+    await expectRefused(circulation.deskCopy('BK9999999'), 'copy_not_found');
+  });
+
+  it('a damaged return goes to repair and the next reader keeps waiting', async () => {
+    const [a, b] = [await newMember(), await newMember()];
+    const book = await createBook(db, 'Kiralık Konak', 1);
+    await circulation.checkout(librarian, a.id, book.copies[0].barcode);
+    await circulation.reserve(b, [book.id]);
+
+    const result = await circulation.returnCopy(librarian, book.copies[0].barcode, 'damaged');
+
+    expect(result.holdFor).toBeNull();
+    expect(await db.prisma.bookCopy.findUniqueOrThrow({ where: { id: book.copies[0].id } })).toMatchObject({ status: 'IN_REPAIR', condition: 'POOR' });
+    expect((await circulation.reservationsOf(b.id))[0].status).toBe('PENDING');
+  });
+
+  it('a worn return is marked one grade down and still goes to the next reader', async () => {
+    const [a, b] = [await newMember(), await newMember()];
+    const book = await createBook(db, 'Yaprak Dökümü', 1);
+    await circulation.checkout(librarian, a.id, book.copies[0].barcode);
+    await circulation.reserve(b, [book.id]);
+
+    const result = await circulation.returnCopy(librarian, book.copies[0].barcode, 'worn');
+
+    expect(result.holdFor).not.toBeNull();
+    expect(await db.prisma.bookCopy.findUniqueOrThrow({ where: { id: book.copies[0].id } })).toMatchObject({ status: 'ON_HOLD', condition: 'FAIR' });
+  });
+
+  it('lists today’s pickups and the latest desk activity', async () => {
+    const [a, b] = [await createMember(db, { name: 'Elif Şahin' }), await newMember()];
+    const [one, two, three] = [await createBook(db, 'Bir', 1), await createBook(db, 'İki', 1), await createBook(db, 'Üç', 1)];
+    const [held] = await circulation.reserve(asUser(a), [one.id, two.id]);
+    const [collected] = await circulation.reserve(b, [three.id]);
+    await circulation.checkout(librarian, b.id, three.copies[0].barcode);
+    clock.advance(HOUR);
+    await circulation.returnCopy(librarian, three.copies[0].barcode);
+
+    const today = await desk.today();
+    expect(today.pickups).toEqual([
+      expect.objectContaining({ code: held.code, memberName: 'Elif Şahin', books: ['Bir', 'İki'], status: 'READY' }),
+      expect.objectContaining({ code: collected.code, status: 'COLLECTED', books: ['Üç'] }),
+    ]);
+    expect(today.expiringToday).toBe(0); // held on Thursday, due Saturday
+    expect(today.recent.map((r) => r.kind)).toEqual(['in', 'out']);
+    expect(today.recent[1]).toMatchObject({ bookTitle: 'Üç', code: collected.code });
+
+    clock.advance(47 * HOUR - 2 * HOUR); // Saturday morning, deadline 12:00 local
+    expect((await desk.today()).expiringToday).toBe(1);
+  });
+
+  it('the dashboard counts this week day by day and flags members over the fine limit', async () => {
+    const ayse = await newMember();
+    const lent = await createBook(db, 'Puslu Kıtalar Atlası', 1);
+    await circulation.checkout(librarian, ayse.id, lent.copies[0].barcode); // Thursday 1 Oct
+    await circulation.reserve(await newMember(), [lent.id]);
+    await circulation.reserve(await newMember(), [lent.id]);
+
+    const dashboard = await reports.dashboard();
+    expect(dashboard.week.map((d) => d.date)).toEqual(['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
+    expect(dashboard.week[3]).toEqual({ date: '2026-10-01', checkouts: 1, returns: 0 });
+    expect(dashboard.longestWaitlist).toEqual({ title: 'Puslu Kıtalar Atlası', slug: lent.slug, waiting: 2 });
+    expect(dashboard.membersOverLimit.count).toBe(0);
+
+    clock.advance(14 * DAY + 25 * DAY);
+    const later = await reports.dashboard();
+    expect(later.membersOverLimit).toMatchObject({ count: 1, names: ['Ayşe Yılmaz'] });
+    expect(later.longOverdue).toBe(1);
+    expect(later.activeLoansWeekAgo).toBe(1);
+  });
+});

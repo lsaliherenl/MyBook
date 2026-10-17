@@ -1,4 +1,5 @@
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import type { ProfileDto } from "@mybook/shared";
@@ -75,6 +76,11 @@ async function AccountShell({ t, locale, children }: { t: Dictionary; locale: Lo
               </form>
             }
           />
+          {(profile.role === "LIBRARIAN" || profile.role === "ADMIN") && (
+            <Link href={`/${locale}/admin`} className="eyebrow self-start text-[10px] text-plum-500 no-underline hover:text-plum-700">
+              {t.admin.staffLink} →
+            </Link>
+          )}
         </aside>
         <div className="flex min-w-0 flex-[999_1_640px] flex-col gap-14">{children}</div>
       </div>

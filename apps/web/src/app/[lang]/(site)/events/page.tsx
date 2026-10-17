@@ -118,10 +118,9 @@ function EventRow({ event, t, locale }: { event: EventDto; t: Dictionary; locale
   const left = seatsLeft(event);
   const full = left === 0;
   const href = `/${locale}/events/${event.slug}`;
-  const notice = event.kind === "NOTICE";
   return (
     <li
-      className={`group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 border-b border-line py-7 transition-[background-color] duration-350 hover:bg-linear-to-r hover:from-loan-bg/55 hover:to-transparent md:grid-cols-[120px_minmax(0,1fr)_200px_180px] md:gap-8 ${notice ? "bg-paper-2 md:px-5" : ""}`}
+      className="group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 border-b border-line py-7 transition-[background-color] duration-350 hover:bg-linear-to-r hover:from-loan-bg/55 hover:to-transparent md:grid-cols-[120px_minmax(0,1fr)_200px_180px] md:gap-8"
     >
       <div className="row-span-3 flex flex-col gap-0.5 self-start md:row-span-1 md:self-center">
         <span className="eyebrow text-[10px] text-plum-500">{weekday}</span>

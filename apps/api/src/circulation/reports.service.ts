@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { Clock } from './clock.js';
 import { loadSettings } from './holds.js';
-import { addDays, daysOverdue, overdueFine } from './rules.js';
+import { addDays, daysOverdue, libraryDate, libraryDayStart, libraryWeekStart, overdueFine } from './rules.js';
 
 @Injectable()
 export class ReportsService {
@@ -38,15 +38,81 @@ export class ReportsService {
       return { weekStart, count: counts.get(weekStart) ?? 0 };
     });
 
+    const weekAgo = addDays(now, -7);
+    const activeLoansWeekAgo = await this.prisma.loan.count({
+      where: { checkedOutAt: { lte: weekAgo }, OR: [{ status: 'ACTIVE' }, { returnedAt: { gt: weekAgo } }] },
+    });
+    const expiringToday = await this.prisma.reservation.count({
+      where: { status: 'READY', expiresAt: { lt: addDays(libraryDayStart(now), 1) } },
+    });
+    const longOverdue = await this.prisma.loan.count({ where: { status: 'ACTIVE', dueAt: { lt: addDays(now, -14) } } });
+
     return {
       activeLoans,
+      activeLoansWeekAgo,
       overdueLoans,
       awaitingPickup,
+      expiringToday,
       waitingList,
       newMembersThisWeek,
       unpaidFinesTotal: Number(unpaid._sum.amount ?? 0),
       loansPerWeek,
+      week: await this.week(now),
+      membersOverLimit: await this.membersOverLimit(now),
+      longestWaitlist: await this.longestWaitlist(),
+      longOverdue,
     };
+  }
+
+  /** Checkouts and returns for each day of this week, Monday first, in library time. */
+  private async week(now: Date): Promise<DashboardDto['week']> {
+    const monday = libraryWeekStart(now);
+    const rows = await this.prisma.$queryRaw<{ day: string; kind: string; count: bigint }[]>`
+      SELECT to_char((checked_out_at AT TIME ZONE 'UTC') + interval '3 hours', 'YYYY-MM-DD') AS day, 'out' AS kind, count(*) AS count
+      FROM loans WHERE checked_out_at >= ${monday}
+      GROUP BY 1
+      UNION ALL
+      SELECT to_char((returned_at AT TIME ZONE 'UTC') + interval '3 hours', 'YYYY-MM-DD') AS day, 'in' AS kind, count(*) AS count
+      FROM loans WHERE returned_at >= ${monday}
+      GROUP BY 1`;
+    const count = (day: string, kind: string) => Number(rows.find((r) => r.day === day && r.kind === kind)?.count ?? 0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = libraryDate(addDays(monday, i));
+      return { date, checkouts: count(date, 'out'), returns: count(date, 'in') };
+    });
+  }
+
+  /** Members whose unpaid fines plus the fines their overdue loans are running up reach the limit. */
+  private async membersOverLimit(now: Date): Promise<DashboardDto['membersOverLimit']> {
+    const settings = await this.prisma.$transaction((tx) => loadSettings(tx));
+    const limit = settings.fineBlockThreshold;
+    if (limit <= 0) return { count: 0, limit, names: [] };
+
+    const totals = new Map<string, number>();
+    const unpaid = await this.prisma.fine.groupBy({ by: ['memberId'], where: { status: 'UNPAID' }, _sum: { amount: true } });
+    for (const f of unpaid) totals.set(f.memberId, Number(f._sum.amount ?? 0));
+    const overdue = await this.prisma.loan.findMany({ where: { status: 'ACTIVE', dueAt: { lt: now } }, select: { memberId: true, dueAt: true } });
+    for (const l of overdue) {
+      totals.set(l.memberId, (totals.get(l.memberId) ?? 0) + overdueFine(daysOverdue(l.dueAt, now), settings.finePerDay));
+    }
+
+    const over = [...totals].filter(([, total]) => total >= limit).sort((a, b) => b[1] - a[1]);
+    const profiles = await this.prisma.profile.findMany({ where: { id: { in: over.slice(0, 3).map(([id]) => id) } }, select: { id: true, fullName: true } });
+    const names = over.slice(0, 3).map(([id]) => profiles.find((p) => p.id === id)?.fullName ?? '');
+    return { count: over.length, limit, names };
+  }
+
+  private async longestWaitlist(): Promise<DashboardDto['longestWaitlist']> {
+    const [top] = await this.prisma.reservation.groupBy({
+      by: ['bookId'],
+      where: { status: 'PENDING' },
+      _count: { bookId: true },
+      orderBy: { _count: { bookId: 'desc' } },
+      take: 1,
+    });
+    if (!top) return null;
+    const book = await this.prisma.book.findUniqueOrThrow({ where: { id: top.bookId }, select: { title: true, slug: true } });
+    return { title: book.title, slug: book.slug, waiting: top._count.bookId };
   }
 
   async overdue(): Promise<OverdueRowDto[]> {

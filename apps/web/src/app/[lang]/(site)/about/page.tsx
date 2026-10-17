@@ -155,7 +155,7 @@ export default async function AboutPage() {
           {a.floors.map(([floor, name, text], i) => (
             <li
               key={floor}
-              className={`group grid grid-cols-[56px_minmax(0,1fr)] items-baseline gap-x-8 gap-y-1.5 border-b border-line py-6 transition-[background-color] duration-350 hover:bg-linear-to-r hover:from-loan-bg/55 hover:to-transparent md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)] ${floor === "2" ? "bg-paper-2 md:px-4" : ""}`}
+              className="group grid grid-cols-[56px_minmax(0,1fr)] items-baseline gap-x-8 gap-y-1.5 border-b border-line py-6 transition-[background-color] duration-350 hover:bg-linear-to-r hover:from-loan-bg/55 hover:to-transparent md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)]"
             >
               <span className="row-span-2 font-serif text-[44px] leading-none md:row-span-1">{floor}</span>
               <span className="flex items-center font-serif text-[26px]">

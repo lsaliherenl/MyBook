@@ -1,14 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  CheckoutManyResultDto,
   CheckoutResultDto,
+  CirculationError,
+  DeskCopyDto,
   FineDto,
+  LibrarySettingsDto,
   LoanDto,
   MemberStandingDto,
   ReservationDto,
+  ReturnCondition,
   ReturnResultDto,
 } from '@mybook/shared';
 import type { AuthUser } from '../auth/auth.types.js';
 import { ROLE_RANK } from '../auth/auth.types.js';
+import { bookInclude, toBookSummary } from '../catalog/book.mapper.js';
+import type { BookCopy, Reservation } from '../generated/prisma/client.js';
+import type { CopyCondition } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { CirculationException } from './circulation.exception.js';
@@ -31,6 +39,7 @@ import {
   publicStanding,
   releaseCopy,
   takeAvailableCopy,
+  type HoldNotice,
   type Tx,
 } from './holds.js';
 import { addDays, CIRCULATING_STATUSES, daysOverdue, overdueFine, reservationCode } from './rules.js';
@@ -171,78 +180,123 @@ export class CirculationService {
    * there is one; otherwise it is a walk-in loan, allowed when nobody else is waiting for the copy.
    */
   async checkout(actor: AuthUser, memberId: string, barcode: string): Promise<CheckoutResultDto> {
+    const result = await this.checkoutMany(actor, memberId, [barcode]);
+    return { loan: result.loans[0], reservationCode: result.reservationCodes[0] ?? null };
+  }
+
+  /**
+   * Every copy a member takes in one visit, lent together or not at all. An admin may `override`
+   * fines over the limit (never a blocked account or an overdue loan); the override is audited.
+   */
+  async checkoutMany(actor: AuthUser, memberId: string, barcodes: string[], override = false): Promise<CheckoutManyResultDto> {
+    if (override && ROLE_RANK[actor.role] < ROLE_RANK.ADMIN) throw new ForbiddenException('Only an admin can override the fine limit');
     const now = this.clock.now();
+    const unique = [...new Set(barcodes.map((b) => b.trim().toUpperCase()))];
 
     const result = await this.prisma.$transaction(async (tx) => {
       if (!(await lockMember(tx, memberId))) throw new NotFoundException('Member not found');
-      const copy = await lockCopyByBarcode(tx, barcode);
-      if (!copy) throw new CirculationException('copy_not_found', { barcode });
-      if (copy.status === 'ON_LOAN') throw new CirculationException('copy_on_loan', { barcode });
-      if (copy.status !== 'AVAILABLE' && copy.status !== 'ON_HOLD') {
-        throw new CirculationException('copy_not_circulating', { barcode, status: copy.status });
-      }
-
       const settings = await loadSettings(tx);
-      const standing = await memberStanding(tx, memberId, settings, now);
-      if (standing.blocking) throw new CirculationException(standing.blocking);
+      const loanIds: string[] = [];
+      const codes = new Set<string>();
 
-      const borrowed = await tx.loan.count({ where: { memberId, status: 'ACTIVE', copy: { bookId: copy.bookId } } });
-      if (borrowed > 0) throw new CirculationException('already_borrowed');
+      for (const barcode of unique) {
+        const copy = await lockCopyByBarcode(tx, barcode);
+        if (!copy) throw new CirculationException('copy_not_found', { barcode });
+        const own = await checkoutClearance(tx, memberId, copy, settings, now, override);
 
-      const own = await tx.reservation.findFirst({
-        where: { memberId, bookId: copy.bookId, status: { in: ['PENDING', 'READY'] } },
-      });
-
-      if (copy.status === 'ON_HOLD') {
-        const holder = await tx.reservation.findFirst({ where: { copyId: copy.id, status: 'READY' } });
-        if (holder && holder.memberId !== memberId) {
-          throw new CirculationException('copy_reserved_for_another', { reservationCode: holder.code });
-        }
-      } else {
-        // An available copy while others queue for the title would be a broken invariant; respect the queue anyway.
-        const othersWaiting = await tx.reservation.count({
-          where: { bookId: copy.bookId, status: 'PENDING', memberId: { not: memberId } },
+        await tx.bookCopy.update({ where: { id: copy.id }, data: { status: 'ON_LOAN' } });
+        const loan = await tx.loan.create({
+          data: {
+            copyId: copy.id,
+            memberId,
+            reservationId: own?.id ?? null,
+            checkedOutAt: now,
+            dueAt: addDays(now, settings.loanDays),
+            checkedOutById: actor.id,
+          },
         });
-        if (othersWaiting > 0 && !own) throw new CirculationException('copy_reserved_for_another');
-      }
-
-      if (!own && standing.slotsLeft < 1) throw new CirculationException('loan_limit_reached', { slotsLeft: 0 });
-
-      await tx.bookCopy.update({ where: { id: copy.id }, data: { status: 'ON_LOAN' } });
-      const loan = await tx.loan.create({
-        data: {
-          copyId: copy.id,
-          memberId,
-          reservationId: own?.id ?? null,
-          checkedOutAt: now,
-          dueAt: addDays(now, settings.loanDays),
-          checkedOutById: actor.id,
-        },
-      });
-      if (own) {
-        await tx.reservation.update({ where: { id: own.id }, data: { status: 'FULFILLED', fulfilledAt: now, copyId: copy.id } });
-        // The member brought a different copy than the one held for them: the held copy is free again.
-        if (own.status === 'READY' && own.copyId && own.copyId !== copy.id) {
-          await releaseCopy(tx, { id: own.copyId, bookId: own.bookId }, now, settings);
+        if (own) {
+          await tx.reservation.update({ where: { id: own.id }, data: { status: 'FULFILLED', fulfilledAt: now, copyId: copy.id } });
+          // The member brought a different copy than the one held for them: the held copy is free again.
+          if (own.status === 'READY' && own.copyId && own.copyId !== copy.id) {
+            await releaseCopy(tx, { id: own.copyId, bookId: own.bookId }, now, settings);
+          }
+          codes.add(own.code);
         }
+        await tx.auditLog.create({
+          data: {
+            actorId: actor.id,
+            action: 'loan.checkout',
+            entityType: 'loan',
+            entityId: loan.id,
+            data: { memberId, barcode, reservationCode: own?.code ?? null, override },
+          },
+        });
+        loanIds.push(loan.id);
       }
-      await tx.auditLog.create({
-        data: {
-          actorId: actor.id,
-          action: 'loan.checkout',
-          entityType: 'loan',
-          entityId: loan.id,
-          data: { memberId, barcode, reservationCode: own?.code ?? null },
-        },
-      });
-      return { loanId: loan.id, reservationCode: own?.code ?? null };
+      return { loanIds, codes: [...codes], dueAt: addDays(now, settings.loanDays) };
     }, TX_OPTIONS);
 
-    return { loan: await this.loanDto(result.loanId), reservationCode: result.reservationCode };
+    const loans: LoanDto[] = [];
+    for (const id of result.loanIds) loans.push(await this.loanDto(id));
+    return { loans, reservationCodes: result.codes, dueAt: result.dueAt.toISOString() };
   }
 
-  /** The librarian scans a returned copy: closes the loan, charges a late fine, routes the copy on. */
-  async returnCopy(actor: AuthUser, barcode: string): Promise<ReturnResultDto> {
+  /** A scanned copy before anything happens: who has it, who is next, and whether `memberId` may take it. */
+  async deskCopy(barcode: string, memberId?: string): Promise<DeskCopyDto> {
+    const now = this.clock.now();
+    const code = barcode.trim().toUpperCase();
+    const copy = await this.prisma.bookCopy.findUnique({ where: { barcode: code }, include: { book: { include: bookInclude } } });
+    if (!copy) throw new CirculationException('copy_not_found', { barcode: code });
+    const settings = await this.prisma.$transaction((tx) => loadSettings(tx));
+
+    const loan = await this.prisma.loan.findFirst({
+      where: { copyId: copy.id, status: 'ACTIVE' },
+      include: { member: { select: { id: true, fullName: true } } },
+    });
+    const next = await this.prisma.reservation.findFirst({
+      where: { bookId: copy.bookId, status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      include: { member: { select: { fullName: true } } },
+    });
+
+    let checkoutRefusal: CirculationError | null = null;
+    if (memberId) {
+      try {
+        await this.prisma.$transaction((tx) => checkoutClearance(tx, memberId, copy, settings, now, false));
+      } catch (e) {
+        if (!(e instanceof CirculationException)) throw e;
+        checkoutRefusal = e.code;
+      }
+    }
+
+    const late = loan ? daysOverdue(loan.dueAt, now) : 0;
+    return {
+      barcode: copy.barcode,
+      status: copy.status,
+      shelfLocation: copy.shelfLocation,
+      book: toBookSummary(copy.book, this.supabase),
+      loan: loan
+        ? {
+            id: loan.id,
+            memberId: loan.member.id,
+            memberName: loan.member.fullName,
+            checkedOutAt: loan.checkedOutAt.toISOString(),
+            dueAt: loan.dueAt.toISOString(),
+            daysOverdue: late,
+            fine: overdueFine(late, settings.finePerDay),
+          }
+        : null,
+      nextReader: next ? { reservationCode: next.code, memberName: next.member.fullName } : null,
+      checkoutRefusal,
+    };
+  }
+
+  /**
+   * The librarian scans a returned copy: closes the loan, charges a late fine, routes the copy on.
+   * A worn copy is marked one grade down; a damaged one goes to repair and skips the waiting list.
+   */
+  async returnCopy(actor: AuthUser, barcode: string, condition: ReturnCondition = 'same'): Promise<ReturnResultDto> {
     const now = this.clock.now();
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -264,14 +318,20 @@ export class CirculationService {
             })
           : null;
 
-      const holdFor = await releaseCopy(tx, copy, now, settings);
+      let holdFor: HoldNotice | null = null;
+      if (condition === 'damaged') {
+        await tx.bookCopy.update({ where: { id: copy.id }, data: { status: 'IN_REPAIR', condition: 'POOR' } });
+      } else {
+        if (condition === 'worn') await tx.bookCopy.update({ where: { id: copy.id }, data: { condition: WORN[copy.condition] } });
+        holdFor = await releaseCopy(tx, copy, now, settings);
+      }
       await tx.auditLog.create({
         data: {
           actorId: actor.id,
           action: 'loan.return',
           entityType: 'loan',
           entityId: loan.id,
-          data: { barcode, daysOverdue: late, fine: amount, holdFor: holdFor?.reservationCode ?? null },
+          data: { barcode, daysOverdue: late, fine: amount, condition, holdFor: holdFor?.reservationCode ?? null },
         },
       });
       return { loanId: loan.id, fineId: fine?.id ?? null, holdFor };
@@ -360,4 +420,52 @@ export class CirculationService {
     }
     return result;
   }
+}
+
+
+/** One grade down for a copy that came back worn. */
+const WORN: Record<CopyCondition, CopyCondition> = { NEW: 'GOOD', GOOD: 'FAIR', FAIR: 'POOR', POOR: 'POOR' };
+
+/**
+ * Throws the reason `copy` cannot be lent to the member; otherwise returns the member's open
+ * reservation for the title, if any. `override` lets fines over the limit through.
+ */
+async function checkoutClearance(
+  tx: Tx,
+  memberId: string,
+  copy: BookCopy,
+  settings: LibrarySettingsDto,
+  now: Date,
+  override: boolean,
+): Promise<Reservation | null> {
+  if (copy.status === 'ON_LOAN') throw new CirculationException('copy_on_loan', { barcode: copy.barcode });
+  if (copy.status !== 'AVAILABLE' && copy.status !== 'ON_HOLD') {
+    throw new CirculationException('copy_not_circulating', { barcode: copy.barcode, status: copy.status });
+  }
+
+  const standing = await memberStanding(tx, memberId, settings, now);
+  if (standing.blocking && !(override && standing.blocking === 'fines_over_limit')) throw new CirculationException(standing.blocking);
+
+  const borrowed = await tx.loan.count({ where: { memberId, status: 'ACTIVE', copy: { bookId: copy.bookId } } });
+  if (borrowed > 0) throw new CirculationException('already_borrowed');
+
+  const own = await tx.reservation.findFirst({
+    where: { memberId, bookId: copy.bookId, status: { in: ['PENDING', 'READY'] } },
+  });
+
+  if (copy.status === 'ON_HOLD') {
+    const holder = await tx.reservation.findFirst({ where: { copyId: copy.id, status: 'READY' } });
+    if (holder && holder.memberId !== memberId) {
+      throw new CirculationException('copy_reserved_for_another', { reservationCode: holder.code });
+    }
+  } else {
+    // An available copy while others queue for the title would be a broken invariant; respect the queue anyway.
+    const othersWaiting = await tx.reservation.count({
+      where: { bookId: copy.bookId, status: 'PENDING', memberId: { not: memberId } },
+    });
+    if (othersWaiting > 0 && !own) throw new CirculationException('copy_reserved_for_another');
+  }
+
+  if (!own && standing.slotsLeft < 1) throw new CirculationException('loan_limit_reached', { slotsLeft: 0 });
+  return own;
 }

@@ -1,12 +1,14 @@
 import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import {
+  checkoutManySchema,
   checkoutSchema,
+  deskCopyQuerySchema,
   deskLookupSchema,
   returnSchema,
   updateSettingsSchema,
   waiveFineSchema,
   type CheckoutInput,
-  type ReturnInput,
+  type CheckoutManyInput,
   type UpdateSettingsInput,
 } from '@mybook/shared';
 import { z } from 'zod';
@@ -45,15 +47,30 @@ export class DeskController {
     return this.desk.member(id);
   }
 
+  @Get('desk/today')
+  today() {
+    return this.desk.today();
+  }
+
+  @Get('desk/copies/:barcode')
+  copy(@Param('barcode') barcode: string, @Query(new ZodValidationPipe(deskCopyQuerySchema)) query: z.infer<typeof deskCopyQuerySchema>) {
+    return this.circulation.deskCopy(barcode, query.memberId);
+  }
+
   @Post('desk/checkout')
   checkout(@CurrentUser() user: AuthUser, @Body(new ZodValidationPipe(checkoutSchema)) body: CheckoutInput) {
     return this.circulation.checkout(user, body.memberId, body.barcode);
   }
 
+  @Post('desk/checkouts')
+  checkoutMany(@CurrentUser() user: AuthUser, @Body(new ZodValidationPipe(checkoutManySchema)) body: CheckoutManyInput) {
+    return this.circulation.checkoutMany(user, body.memberId, body.barcodes, body.override);
+  }
+
   @Post('desk/return')
   @HttpCode(200)
-  returnCopy(@CurrentUser() user: AuthUser, @Body(new ZodValidationPipe(returnSchema)) body: ReturnInput) {
-    return this.circulation.returnCopy(user, body.barcode);
+  returnCopy(@CurrentUser() user: AuthUser, @Body(new ZodValidationPipe(returnSchema)) body: z.infer<typeof returnSchema>) {
+    return this.circulation.returnCopy(user, body.barcode, body.condition);
   }
 
   // ─── Fines ─────────────────────────────────────────────────────────────────
