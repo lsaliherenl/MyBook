@@ -136,7 +136,7 @@ function EventRow({ event, t, locale }: { event: EventDto; t: Dictionary; locale
             ))}
           </span>
         </span>
-        <Link href={href} className="font-serif text-[26px] leading-[1.1] text-ink no-underline group-hover:italic md:text-[30px]">
+        <Link href={href} className="font-serif text-[26px] leading-[1.1] text-ink underline decoration-transparent decoration-1 underline-offset-6 transition-colors duration-300 group-hover:text-plum-500 group-hover:decoration-plum-500 md:text-[30px]">
           {localized(event, "title", locale)}
         </Link>
         <span className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink-muted">

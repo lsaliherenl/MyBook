@@ -132,7 +132,7 @@ function CollectionCard({ collection, t, locale }: { collection: CollectionSumma
       <span className="eyebrow text-[10px] text-plum-500">
         {c.kinds[collection.kind]} · {bookCount(collection.bookCount, c, locale)}
       </span>
-      <span className="font-serif text-[28px] leading-[1.1] group-hover:italic">{localized(collection, "title", locale)}</span>
+      <span className="font-serif text-[28px] leading-[1.1] underline decoration-transparent decoration-1 underline-offset-6 transition-colors duration-300 group-hover:text-plum-500 group-hover:decoration-plum-500">{localized(collection, "title", locale)}</span>
       <span className="text-[15px] leading-[1.55] text-ink-muted">{localized(collection, "description", locale)}</span>
       {curator && <span className="text-[13px] text-ink-muted">{curator}</span>}
     </Link>
