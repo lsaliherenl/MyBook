@@ -6,6 +6,7 @@ import type {
   BookSummaryDto,
   CategoryDto,
   CollectionDto,
+  EventDetailDto,
   EventDto,
   LibrarySettingsDto,
   Paginated,
@@ -67,6 +68,13 @@ export async function getEvents(when: "upcoming" | "past", limit = 20): Promise<
   cacheLife("minutes");
   cacheTag("events");
   return api<EventDto[]>(`/events?when=${when}&limit=${limit}`).catch(() => []);
+}
+
+export async function getEvent(slug: string): Promise<EventDetailDto | null> {
+  "use cache";
+  cacheLife("seconds");
+  cacheTag("events", `event:${slug}`);
+  return api<EventDetailDto>(`/events/${encodeURIComponent(slug)}`).catch(() => null);
 }
 
 /** Loan days, limits and fines as the librarian configured them; falls back to the documented defaults. */

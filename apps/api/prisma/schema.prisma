@@ -166,6 +166,7 @@ model Book {
   favorites        Favorite[]
   collectionItems  CollectionItem[]
   readingListItems ReadingListItem[]
+  events           Event[]
 
   @@index([title])
   @@index([language])
@@ -447,10 +448,15 @@ model Event {
   /// Null means open seating.
   capacity      Int?
   rsvpRequired  Boolean   @default(true) @map("rsvp_required")
+  /// Book to bring along, e.g. the reading circle's novel.
+  bookId        String?   @map("book_id") @db.Uuid
+  /// Programme, host, audience and directions, each in tr/en (see EventDetailsDto in @mybook/shared).
+  details       Json      @default("{}")
   isPublished   Boolean   @default(false) @map("is_published")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  book          Book?               @relation(fields: [bookId], references: [id], onDelete: SetNull)
   registrations EventRegistration[]
 
   @@index([startsAt])
@@ -462,6 +468,8 @@ model EventRegistration {
   memberId   String   @map("member_id") @db.Uuid
   /// Signed up after the event was full; promoted in sign-up order when a seat frees up.
   waitlisted Boolean  @default(false)
+  /// "Remind me the day before".
+  remind     Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   event  Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)

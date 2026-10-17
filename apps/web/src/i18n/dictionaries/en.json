@@ -679,5 +679,195 @@
     "saveChanges": "Save changes",
     "saved": "Your changes have been saved.",
     "invalidPhone": "Please check the phone number."
+  },
+  "events": {
+    "eyebrow": "Autumn programme · {year}",
+    "title": "Events",
+    "intro": "Readings, workshops and talks in the reading rooms. Free for members; most need a quick RSVP so we can save you a seat.",
+    "filter": "Filter events",
+    "all": "All",
+    "kinds": {
+      "BOOK_CLUB": "Book club",
+      "WORKSHOP": "Workshop",
+      "TALK": "Talk",
+      "NOTICE": "Notice"
+    },
+    "kindsPlural": {
+      "BOOK_CLUB": "Book clubs",
+      "WORKSHOP": "Workshops",
+      "TALK": "Talks",
+      "NOTICE": "Notices"
+    },
+    "subscribe": "Subscribe to calendar",
+    "featured": "Featured · {kind}",
+    "rsvp": "RSVP",
+    "details": "Details",
+    "comingUp": "Coming up",
+    "dates": "{count} dates",
+    "datesOne": "1 date",
+    "seatsLeft": "{left} of {total} seats left",
+    "fewSeats": "Only {count} seats left",
+    "full": "Full · {count} on waitlist",
+    "fullNoWait": "Full",
+    "openSeating": "Open seating",
+    "dropIn": "Drop in",
+    "everyDay": "Every day except Sunday",
+    "joinWaitlist": "Join waitlist",
+    "going": "You're going",
+    "noRsvp": "No RSVP needed",
+    "empty": "Nothing in this category yet — new dates are added every Monday.",
+    "recently": "Recently",
+    "imageAlt": "An evening book club: open novels, tulip glasses of tea and simit on a long table"
+  },
+  "eventPage": {
+    "breadcrumb": "Breadcrumb",
+    "imageAlt": "An open novel with page markers beside a glass of Turkish tea under a desk lamp",
+    "about": "About this evening",
+    "aboutDay": "About this event",
+    "programme": "Programme",
+    "bringBook": "Bring the book",
+    "joinBookWaitlist": "Join the waitlist →",
+    "seeBook": "See the book →",
+    "allOut": "All copies out · next back {date}",
+    "hostedBy": "Hosted by",
+    "gettingThere": "Getting there",
+    "rsvpCard": "RSVP",
+    "saveSeat": "Save your seat",
+    "going": "{count} going",
+    "rsvpButton": "RSVP · 1 seat",
+    "rsvpNote": "Free. One seat per member. Cancel up to 2 hours before so someone on the waitlist can come.",
+    "onTheList": "You're on the list",
+    "seatHeld": "A seat is held for {name}.",
+    "remind": "Remind me the day before",
+    "addToCalendar": "Add to calendar",
+    "cancel": "Cancel my RSVP",
+    "fullBadge": "Full",
+    "allTaken": "All {count} seats are taken",
+    "peopleWaiting": "{count} people are waiting. Seats often free up the day before — we'll let you know if one does.",
+    "nobodyWaiting": "Seats often free up the day before — we'll let you know if one does.",
+    "joinWaitlist": "Join waitlist · you'd be #{n}",
+    "onWaitlist": "You're on the waitlist",
+    "waitPosition": "When a seat frees up you move onto the list automatically.",
+    "leaveWaitlist": "Leave the waitlist",
+    "signInToRsvp": "Sign in to RSVP",
+    "noRsvpTitle": "No RSVP needed",
+    "noRsvpText": "Open seating — just come along.",
+    "over": "This event is over",
+    "overText": "Have a look at the calendar for upcoming dates.",
+    "allEvents": "All events",
+    "errors": {
+      "event_not_found": "Event not found.",
+      "event_no_rsvp": "This event doesn't take RSVPs.",
+      "event_started": "The event has started; sign-ups are closed.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "seatsLeftLine": "{left} of {total} seats left",
+    "waitHeadline": "You're #{n}."
+  },
+  "about": {
+    "eyebrow": "About the library",
+    "title": "A quiet room for a busy campus.",
+    "intro1": "The Central Library is where the campus comes to read, think and finish things. Five floors of open shelves, a reading room with long tables and tall windows, and a circulation desk that knows most readers by name.",
+    "intro2": "MY / BOOK is our online counter: search the catalog, reserve what you need, and we'll have it waiting for you at the desk — usually within a few hours.",
+    "imageAlt": "The library atrium: five floors of open shelves under a skylight",
+    "numbers": "The library in numbers",
+    "statBooks": "Books in the catalog",
+    "statFloors": "Floors, ground to fourth",
+    "statHours": "Open hours a week",
+    "visitEyebrow": "Visit",
+    "visitTitle": "Find us on the main campus",
+    "email": "kutuphane@mybook.edu.tr",
+    "phone": "+90 312 000 00 00",
+    "directions": "Get directions",
+    "hours": "Opening hours",
+    "weekdays": "Monday – Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday & public holidays",
+    "closed": "Closed",
+    "examWeeks": "Exam weeks",
+    "untilMidnight": "Until midnight",
+    "hoursNote": "The circulation desk closes 15 minutes before the library. The 24-hour return slot is to the left of the main entrance.",
+    "floorsEyebrow": "Floor guide",
+    "floorsTitle": "Where things are",
+    "floorsNote": "Every catalog record shows the floor next to the shelf code.",
+    "floors": [
+      [
+        "4",
+        "Literature",
+        "Turkish & world literature, poetry, drama · silent floor"
+      ],
+      [
+        "3",
+        "History, philosophy & art",
+        "Social sciences, history, philosophy, art & design"
+      ],
+      [
+        "2",
+        "Reading Room",
+        "Long tables, 160 seats, events in the evening · quiet, not silent"
+      ],
+      [
+        "1",
+        "Science & computing",
+        "8 group study rooms you can book at the desk"
+      ],
+      [
+        "G",
+        "Circulation desk",
+        "Pickups and returns, new arrivals, the hold shelf and the auditorium"
+      ]
+    ],
+    "rulesEyebrow": "Borrowing rules",
+    "rulesTitle": "The short version",
+    "rules": {
+      "loanValue": "{n} days",
+      "loanTitle": "Loan period",
+      "loanText": "Counted from the day you collect at the desk.",
+      "limitValue": "{n} books",
+      "limitTitle": "At a time",
+      "limitText": "Reservations count toward the limit; waitlist places don't.",
+      "renewValue": "{n} renewal",
+      "renewTitle": "Online",
+      "renewText": "Only if nobody is waiting and the book isn't overdue.",
+      "pickupValue": "{n} hours",
+      "pickupTitle": "To collect",
+      "pickupText": "After your book is set aside. Sundays don't count.",
+      "fineTitle": "Per late day",
+      "fineText": "Borrowing pauses once fines reach {limit}.",
+      "lostValue": "Lost?",
+      "lostTitle": "Tell us early",
+      "lostText": "You can replace the book with the same edition or pay its current price."
+    },
+    "accessEyebrow": "Accessibility",
+    "accessTitle": "Everyone gets in",
+    "access": [
+      "Step-free main entrance and a lift to every floor",
+      "Height-adjustable desks in the Reading Room",
+      "We fetch books from any floor — just ask at the desk",
+      "This site works with screen readers and keyboard only"
+    ],
+    "faqEyebrow": "Questions",
+    "faqTitle": "Often asked at the desk",
+    "faq": [
+      [
+        "Can people outside the university borrow?",
+        "Visitors can read in the library with ID. Borrowing is for students, staff and alumni members."
+      ],
+      [
+        "What if I don't collect my reservation?",
+        "It expires and the book goes to the next reader. There's no fine for that."
+      ],
+      [
+        "Can I suggest a book we don't have?",
+        "Yes — write to the address below or stop by the desk. Course readings get priority."
+      ],
+      [
+        "Can I eat or drink inside?",
+        "Water and covered drinks are fine everywhere. Food stays in the ground-floor foyer."
+      ]
+    ],
+    "privacyTitle": "Privacy & KVKK",
+    "privacyText": "We keep only what lending needs: your name, email, student number and loan history. You can download your data from Profile & settings and close your account once every book is back.",
+    "statSeats": "Study seats"
   }
 }

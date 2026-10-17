@@ -679,5 +679,195 @@
     "saveChanges": "Değişiklikleri kaydet",
     "saved": "Değişiklikler kaydedildi.",
     "invalidPhone": "Telefon numarasını kontrol et."
+  },
+  "events": {
+    "eyebrow": "Güz programı · {year}",
+    "title": "Etkinlikler",
+    "intro": "Okuma salonlarında okumalar, atölyeler ve söyleşiler. Üyelere ücretsiz; koltuk ayırabilmemiz için çoğunda kısa bir kayıt gerekiyor.",
+    "filter": "Etkinlikleri filtrele",
+    "all": "Tümü",
+    "kinds": {
+      "BOOK_CLUB": "Okuma kulübü",
+      "WORKSHOP": "Atölye",
+      "TALK": "Söyleşi",
+      "NOTICE": "Duyuru"
+    },
+    "kindsPlural": {
+      "BOOK_CLUB": "Okuma kulüpleri",
+      "WORKSHOP": "Atölyeler",
+      "TALK": "Söyleşiler",
+      "NOTICE": "Duyurular"
+    },
+    "subscribe": "Takvime abone ol",
+    "featured": "Öne çıkan · {kind}",
+    "rsvp": "Kayıt ol",
+    "details": "Bilgiler",
+    "comingUp": "Yaklaşanlar",
+    "dates": "{count} tarih",
+    "datesOne": "1 tarih",
+    "seatsLeft": "{total} koltuktan {left} tanesi boş",
+    "fewSeats": "Yalnızca {count} koltuk kaldı",
+    "full": "Dolu · {count} kişi bekleme listesinde",
+    "fullNoWait": "Dolu",
+    "openSeating": "Serbest oturma",
+    "dropIn": "Uğrayabilirsin",
+    "everyDay": "Pazar hariç her gün",
+    "joinWaitlist": "Bekleme listesine gir",
+    "going": "Katılıyorsun",
+    "noRsvp": "Kayıt gerekmez",
+    "empty": "Bu kategoride henüz etkinlik yok — her Pazartesi yeni tarihler ekleniyor.",
+    "recently": "Geçmiş etkinlikler",
+    "imageAlt": "Bir okuma kulübü akşamı: açık romanlar, ince belli bardakta çay ve simit"
+  },
+  "eventPage": {
+    "breadcrumb": "Gezinti yolu",
+    "imageAlt": "Masa lambasının altında ayraçlı açık bir roman ve bir bardak çay",
+    "about": "Bu akşam hakkında",
+    "aboutDay": "Etkinlik hakkında",
+    "programme": "Program",
+    "bringBook": "Kitabı getir",
+    "joinBookWaitlist": "Listeye gir →",
+    "seeBook": "Kitaba git →",
+    "allOut": "Tüm kopyalar dışarıda · sıradaki {date} civarı dönüyor",
+    "hostedBy": "Düzenleyen",
+    "gettingThere": "Nasıl gidilir",
+    "rsvpCard": "Kayıt",
+    "saveSeat": "Koltuğunu ayırt",
+    "going": "{count} kişi katılıyor",
+    "rsvpButton": "Kayıt ol · 1 koltuk",
+    "rsvpNote": "Ücretsiz. Üye başına bir koltuk. Bekleme listesindeki biri gelebilsin diye en geç 2 saat önce iptal et.",
+    "onTheList": "Listedesin",
+    "seatHeld": "Koltuk {name} için ayrıldı.",
+    "remind": "Bir gün önce hatırlat",
+    "addToCalendar": "Takvime ekle",
+    "cancel": "Kaydımı iptal et",
+    "fullBadge": "Dolu",
+    "allTaken": "{count} koltuğun hepsi dolu",
+    "peopleWaiting": "{count} kişi bekliyor. Koltuklar genellikle bir gün önce boşalır — boşalırsa haber veririz.",
+    "nobodyWaiting": "Koltuklar genellikle bir gün önce boşalır — boşalırsa haber veririz.",
+    "joinWaitlist": "Listeye gir · {n}. sıradasın",
+    "onWaitlist": "Bekleme listesindesin",
+    "waitPosition": "Bir koltuk boşalınca otomatik olarak listeye geçersin.",
+    "leaveWaitlist": "Bekleme listesinden çık",
+    "signInToRsvp": "Kayıt olmak için giriş yap",
+    "noRsvpTitle": "Kayıt gerekmez",
+    "noRsvpText": "Açık oturma — gelmen yeterli.",
+    "over": "Bu etkinlik sona erdi",
+    "overText": "Yaklaşan tarihler için etkinlik takvimine göz at.",
+    "allEvents": "Tüm etkinlikler",
+    "errors": {
+      "event_not_found": "Etkinlik bulunamadı.",
+      "event_no_rsvp": "Bu etkinlik için kayıt gerekmiyor.",
+      "event_started": "Etkinlik başladı; kayıtlar kapandı.",
+      "unknown": "Bir şeyler ters gitti. Lütfen tekrar dene."
+    },
+    "seatsLeftLine": "{total} koltuktan {left} tanesi boş",
+    "waitHeadline": "Sıran: {n}."
+  },
+  "about": {
+    "eyebrow": "Kütüphane hakkında",
+    "title": "Kalabalık bir kampüs için sessiz bir oda.",
+    "intro1": "Merkez Kütüphane, kampüsün okumak, düşünmek ve işini bitirmek için geldiği yer. Beş katlık açık raflar, uzun masalı ve yüksek pencereli bir okuma salonu ve okurların çoğunu adıyla tanıyan bir ödünç masası.",
+    "intro2": "MY / BOOK çevrimiçi gişemiz: kataloğu tara, ihtiyacın olanı ayırt; biz de genellikle birkaç saat içinde masada hazır edelim.",
+    "imageAlt": "Kütüphane atriyumu: çatı penceresi altında beş katlık açık raflar",
+    "numbers": "Rakamlarla kütüphane",
+    "statBooks": "Katalogdaki kitap",
+    "statFloors": "Kat (zemin–4)",
+    "statHours": "Haftalık açık saat",
+    "visitEyebrow": "Ziyaret",
+    "visitTitle": "Bizi ana kampüste bulun",
+    "email": "kutuphane@mybook.edu.tr",
+    "phone": "+90 312 000 00 00",
+    "directions": "Yol tarifi al",
+    "hours": "Çalışma saatleri",
+    "weekdays": "Pazartesi – Cuma",
+    "saturday": "Cumartesi",
+    "sunday": "Pazar ve resmî tatiller",
+    "closed": "Kapalı",
+    "examWeeks": "Sınav haftaları",
+    "untilMidnight": "Gece yarısına kadar",
+    "hoursNote": "Ödünç masası kütüphaneden 15 dakika önce kapanır. 24 saat açık iade kutusu ana girişin solunda.",
+    "floorsEyebrow": "Kat rehberi",
+    "floorsTitle": "Ne nerede",
+    "floorsNote": "Her katalog kaydında raf kodunun yanında kat bilgisi yazar.",
+    "floors": [
+      [
+        "4",
+        "Edebiyat",
+        "Türk ve dünya edebiyatı, şiir, tiyatro · sessiz kat"
+      ],
+      [
+        "3",
+        "Tarih, felsefe ve sanat",
+        "Sosyal bilimler, tarih, felsefe, sanat ve tasarım"
+      ],
+      [
+        "2",
+        "Okuma Salonu",
+        "Uzun masalar, 160 koltuk, akşamları etkinlik · sakin ama sessiz değil"
+      ],
+      [
+        "1",
+        "Fen ve bilgisayar",
+        "Masadan ayırtılabilen 8 grup çalışma odası"
+      ],
+      [
+        "G",
+        "Ödünç masası",
+        "Teslim alma ve iade, yeni gelenler, ayırma rafı ve konferans salonu"
+      ]
+    ],
+    "rulesEyebrow": "Ödünç kuralları",
+    "rulesTitle": "Kısaca",
+    "rules": {
+      "loanValue": "{n} gün",
+      "loanTitle": "Ödünç süresi",
+      "loanText": "Masadan teslim aldığın günden itibaren sayılır.",
+      "limitValue": "{n} kitap",
+      "limitTitle": "Aynı anda",
+      "limitText": "Rezervasyonlar sınıra dahil; bekleme listesi sıraları dahil değil.",
+      "renewValue": "{n} yenileme",
+      "renewTitle": "Çevrimiçi",
+      "renewText": "Yalnızca bekleyen yoksa ve kitap gecikmemişse.",
+      "pickupValue": "{n} saat",
+      "pickupTitle": "Teslim almak için",
+      "pickupText": "Kitabın ayrıldıktan sonra. Pazar günleri sayılmaz.",
+      "fineTitle": "Geciken gün başına",
+      "fineText": "Ceza {limit} tutarına ulaşınca ödünç alma durur.",
+      "lostValue": "Kaybettin mi?",
+      "lostTitle": "Erken haber ver",
+      "lostText": "Kitabı aynı baskıyla değiştirebilir ya da güncel fiyatını ödeyebilirsin."
+    },
+    "accessEyebrow": "Erişilebilirlik",
+    "accessTitle": "Herkes girebilir",
+    "access": [
+      "Basamaksız ana giriş ve her kata asansör",
+      "Okuma Salonu’nda yüksekliği ayarlanabilir masalar",
+      "Her kattan kitap getiririz — masaya sor",
+      "Bu site ekran okuyucuyla ve yalnızca klavyeyle kullanılabilir"
+    ],
+    "faqEyebrow": "Sorular",
+    "faqTitle": "Masada sık sorulanlar",
+    "faq": [
+      [
+        "Üniversite dışından kişiler ödünç alabilir mi?",
+        "Ziyaretçiler kimlikle kütüphanede okuyabilir. Ödünç alma öğrenci, personel ve mezun üyeler içindir."
+      ],
+      [
+        "Rezervasyonumu teslim almazsam ne olur?",
+        "Süresi dolar ve kitap sıradaki okura geçer. Bunun için ceza yok."
+      ],
+      [
+        "Bizde olmayan bir kitabı önerebilir miyim?",
+        "Evet — aşağıdaki adrese yaz ya da masaya uğra. Ders okumaları önceliklidir."
+      ],
+      [
+        "İçeride yiyip içebilir miyim?",
+        "Su ve kapaklı içecekler her yerde serbest. Yiyecekler zemin kattaki fuayede kalır."
+      ]
+    ],
+    "privacyTitle": "Gizlilik ve KVKK",
+    "privacyText": "Yalnızca ödünç verme için gereken bilgileri tutarız: adın, e-postan, öğrenci numaran ve ödünç geçmişin. Bilgilerini Profil ve ayarlar sayfasından indirebilir, tüm kitaplar iade edilince hesabını kapatabilirsin.",
+    "statSeats": "Çalışma koltuğu"
   }
 }

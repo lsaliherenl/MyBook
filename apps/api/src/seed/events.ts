@@ -1,4 +1,4 @@
-import type { EventKind } from '@mybook/shared';
+import type { EventDetails, EventKind } from '@mybook/shared';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
 interface SeedEvent {
@@ -15,7 +15,17 @@ interface SeedEvent {
   endsAt?: string;
   capacity?: number;
   rsvpRequired?: boolean;
+  /** Slug of the book to bring, if it is in the catalog. */
+  bookSlug?: string;
+  details?: EventDetails;
 }
+
+const t = (tr: string, en: string) => ({ tr, en });
+const FREE_MEMBERS = { audience: t('Ücretsiz · yalnızca üyeler · Türkçe', 'Free · members only · in Turkish') };
+const TO_READING_ROOM = t(
+  'Doğu merdiveni ya da asansörle 2. kata çık, cam kapılardan sola dön. Basamaksız erişim var.',
+  'East staircase or the lift to the 2nd floor, then left through the glass doors. Step-free access.',
+);
 
 const READING_ROOM = { locationTr: 'Okuma Salonu, 2. kat', locationEn: 'Reading Room, 2nd floor' };
 
@@ -33,6 +43,15 @@ export const SEED_EVENTS: SeedEvent[] = [
     startsAt: '2026-10-20T14:00:00+03:00',
     endsAt: '2026-10-20T15:30:00+03:00',
     capacity: 20,
+    details: {
+      audience: t('Ücretsiz · lisansüstü öğrenciler öncelikli', 'Free · graduate students first'),
+      host: { name: t('Kütüphane Araştırma Destek Ekibi', 'Library Research Support') },
+      programme: [
+        { time: '14:00', title: t('Veritabanlarında arama', 'Searching the databases') },
+        { time: '14:45', title: t('Atıf zincirini takip etmek', 'Following citation trails') },
+        { time: '15:15', title: t('Sorular', 'Questions') },
+      ],
+    },
   },
   {
     slug: 'how-search-engines-decide-what-you-read',
@@ -72,6 +91,21 @@ export const SEED_EVENTS: SeedEvent[] = [
     startsAt: '2026-11-12T19:00:00+03:00',
     endsAt: '2026-11-12T21:00:00+03:00',
     capacity: 40,
+    bookSlug: 'tutunamayanlar',
+    details: {
+      ...FREE_MEMBERS,
+      host: {
+        name: t('Türk Edebiyatı Okuma Grubu', 'Turkish Literature Reading Group'),
+        note: t('Edebiyat Fakültesi · her ayın ikinci Perşembesi buluşur', 'Faculty of Letters · meets on the second Thursday of every month'),
+      },
+      directions: TO_READING_ROOM,
+      programme: [
+        { time: '19:00', title: t('Karşılama ve çay', 'Welcome & tea'), note: t('Pencere kenarındaki uzun masalarda yerini al.', 'Find a seat at the long tables by the windows.') },
+        { time: '19:15', title: t('Yakın okuma', 'Close reading'), note: t('Açılış bölümleri, kısa pasajlar hâlinde sesli okunur.', 'The opening chapters, read aloud in short passages.') },
+        { time: '20:15', title: t('Açık sohbet', 'Open conversation'), note: t('Önce küçük gruplar, sonra hep birlikte.', 'Small groups, then everyone together.') },
+        { time: '21:00', title: t('Kapanış', 'Close'), note: t('Ödünç almak istersen gişe 22:00’ye kadar açık.', "The desk stays open until 22:00 if you'd like to borrow.") },
+      ],
+    },
   },
   {
     slug: 'poetry-evening-turkish-poets-in-translation',
@@ -83,6 +117,7 @@ export const SEED_EVENTS: SeedEvent[] = [
     ...READING_ROOM,
     startsAt: '2026-11-20T19:30:00+03:00',
     capacity: 30,
+    details: { ...FREE_MEMBERS, directions: TO_READING_ROOM },
   },
   {
     slug: 'book-swap-and-tea',
@@ -119,6 +154,7 @@ export const SEED_EVENTS: SeedEvent[] = [
     ...READING_ROOM,
     startsAt: '2026-10-01T19:00:00+03:00',
     capacity: 40,
+    bookSlug: 'kurk-mantolu-madonna',
   },
   {
     slug: 'citation-managers-in-45-minutes',
@@ -136,7 +172,10 @@ export const SEED_EVENTS: SeedEvent[] = [
 
 export async function seedEvents(prisma: PrismaService): Promise<void> {
   for (const e of SEED_EVENTS) {
+    const book = e.bookSlug ? await prisma.book.findUnique({ where: { slug: e.bookSlug }, select: { id: true } }) : null;
     const data = {
+      bookId: book?.id ?? null,
+      details: e.details ?? {},
       kind: e.kind,
       titleTr: e.titleTr,
       titleEn: e.titleEn,

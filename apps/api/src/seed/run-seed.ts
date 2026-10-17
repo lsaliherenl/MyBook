@@ -62,8 +62,6 @@ async function main() {
   }
   console.log(`✓ ${SEED_CATEGORIES.length} categories`);
 
-  await seedEvents(prisma);
-
   const report = { imported: 0, existing: 0, notFound: [] as string[], noCover: [] as string[], failed: [] as string[] };
 
   for (const [i, seed] of SEED_BOOKS.entries()) {
@@ -202,6 +200,9 @@ async function main() {
   await prisma.collectionItem.deleteMany({ where: { collectionId: collection.id } });
   await prisma.collectionItem.createMany({ data: picks.map((bookId, position) => ({ collectionId: collection.id, bookId, position })) });
   console.log(`✓ staff picks: ${picks.length} books`);
+
+  // After the books, so events can point at the book to bring.
+  await seedEvents(prisma);
 
   console.log(
     `\nImported ${report.imported}, already there ${report.existing}, not found ${report.notFound.length}, ` +
