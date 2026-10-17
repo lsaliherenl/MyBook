@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, redirect, unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import type { DeskTodayDto } from "@mybook/shared";
 import { AdminNav, AdminNavLinks, type AdminNavItem } from "@/components/admin/admin-nav";
@@ -57,8 +57,8 @@ function navItems(t: Dictionary, locale: Locale): AdminNavItem[] {
   return [
     { key: "dashboard", label: n.dashboard, href: base },
     { key: "desk", label: n.desk, href: `${base}/desk` },
-    { key: "books", label: n.books },
-    { key: "import", label: n.import },
+    { key: "books", label: n.books, href: `${base}/books` },
+    { key: "import", label: n.import, href: `${base}/import` },
     { key: "members", label: n.members },
     { key: "events", label: n.events },
     { key: "reports", label: n.reports },
@@ -85,8 +85,10 @@ async function StaffOnly({ t, locale, children }: { t: Dictionary; locale: Local
     // Members never learn that the librarian screens exist.
     if (!isStaff(staff)) notFound();
   } catch (error) {
+    // notFound() and redirect() work by throwing; let them through.
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.status === 401) redirect(`/${locale}/login?next=/${locale}/admin`);
-    if (!(error instanceof ApiError)) throw error;
+    // Any other failure, including the API not being reachable at all, gets the message instead of the 500 page.
     return (
       <div className="p-10">
         <FormMessage tone="error">{t.admin.apiUnavailable}</FormMessage>

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AccountModule } from './account/account.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BooksModule } from './books/books.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CirculationModule } from './circulation/circulation.module.js';
 import { EventsModule } from './events/events.module.js';
@@ -23,6 +24,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     AuthModule,
     CatalogModule,
     ImportModule,
+    BooksModule,
     CirculationModule,
     EventsModule,
     AccountModule,

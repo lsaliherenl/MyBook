@@ -23,6 +23,6 @@ import { BOOK_PROVIDERS_TOKEN, type BookMetadataProvider } from './providers/pro
     CoverService,
     ImportService,
   ],
-  exports: [ImportService, BookSourceService],
+  exports: [ImportService, BookSourceService, CoverService],
 })
 export class ImportModule {}

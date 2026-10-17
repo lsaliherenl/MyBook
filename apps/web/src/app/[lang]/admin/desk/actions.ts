@@ -10,21 +10,11 @@ import type {
   ReturnCondition,
   ReturnResultDto,
 } from "@mybook/shared";
-import { api, ApiError } from "@/lib/api";
+import { run, post, type ActionResult } from "@/lib/action-result";
+import { api } from "@/lib/api";
 
 /** Desk calls return either the data or the API's refusal code, which the desk screen translates. */
-export type DeskResult<T> = { ok: true; data: T } | { ok: false; error: string };
-
-async function run<T>(call: () => Promise<T>): Promise<DeskResult<T>> {
-  try {
-    return { ok: true, data: await call() };
-  } catch (error) {
-    if (!(error instanceof ApiError)) throw error;
-    return { ok: false, error: error.code ?? "unknown" };
-  }
-}
-
-const post = (body: unknown) => ({ method: "POST", auth: true, body: JSON.stringify(body) });
+export type DeskResult<T> = ActionResult<T>;
 
 export async function findMembers(q: string) {
   return run(() => api<DeskMemberMatchDto[]>(`/admin/desk/lookup?q=${encodeURIComponent(q)}`, { auth: true }));

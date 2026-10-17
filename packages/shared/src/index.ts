@@ -6,3 +6,4 @@ export * from './search.js';
 export * from './circulation.js';
 export * from './events.js';
 export * from './account.js';
+export * from './admin-books.js';
