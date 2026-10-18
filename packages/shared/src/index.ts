@@ -7,3 +7,4 @@ export * from './circulation.js';
 export * from './events.js';
 export * from './account.js';
 export * from './admin-books.js';
+export * from './admin-members.js';

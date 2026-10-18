@@ -1,57 +1,50 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query } from '@nestjs/common';
-import { updateRoleSchema, type Paginated, type ProfileDto } from '@mybook/shared';
+import { BadRequestException, Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  adminMembersQuerySchema,
+  memberNoteSchema,
+  memberStatusSchema,
+  updateRoleSchema,
+  type AdminMembersQuery,
+  type MemberStatusInput,
+  type ProfileDto,
+} from '@mybook/shared';
 import { z } from 'zod';
 import { CurrentUser, MinRole } from '../auth/auth.decorators.js';
 import type { AuthUser } from '../auth/auth.types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
-import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toProfileDto } from '../me/profile.mapper.js';
-
-const statusSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('ACTIVE') }),
-  z.object({ status: z.literal('BLOCKED'), reason: z.string().trim().min(3).max(300) }),
-]);
-
-const listQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(25),
-});
+import { MembersService } from './members.service.js';
 
 @Controller('admin/members')
 @MinRole('LIBRARIAN')
 export class MembersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly members: MembersService,
+  ) {}
 
   @Get()
-  async list(@Query(new ZodValidationPipe(listQuerySchema)) query: z.infer<typeof listQuerySchema>): Promise<Paginated<ProfileDto>> {
-    const where: Prisma.ProfileWhereInput = query.q
-      ? {
-          OR: [
-            { fullName: { contains: query.q, mode: 'insensitive' } },
-            { email: { contains: query.q, mode: 'insensitive' } },
-            { studentNumber: { contains: query.q } },
-            { cardNumber: { equals: query.q.toUpperCase() } },
-          ],
-        }
-      : {};
-    const [total, rows] = await Promise.all([
-      this.prisma.profile.count({ where }),
-      this.prisma.profile.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (query.page - 1) * query.pageSize,
-        take: query.pageSize,
-      }),
-    ]);
-    return {
-      items: rows.map(toProfileDto),
-      page: query.page,
-      pageSize: query.pageSize,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
-    };
+  list(@Query(new ZodValidationPipe(adminMembersQuerySchema)) query: AdminMembersQuery) {
+    return this.members.list(query);
+  }
+
+  @Get('export.csv')
+  @Header('content-type', 'text/csv; charset=utf-8')
+  @Header('content-disposition', 'attachment; filename="members.csv"')
+  csv(@Query(new ZodValidationPipe(adminMembersQuerySchema)) query: AdminMembersQuery) {
+    return this.members.listCsv(query);
+  }
+
+  @Get(':id')
+  get(@Param('id', ParseUUIDPipe) id: string) {
+    return this.members.get(id);
+  }
+
+  /** Staff notes about a member, visible to librarians only. */
+  @Post(':id/notes')
+  addNote(@CurrentUser() actor: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(memberNoteSchema)) body: z.infer<typeof memberNoteSchema>) {
+    return this.members.addNote(actor, id, body.text);
   }
 
   /** Blocks a member from reserving and borrowing (or lifts the block). */
@@ -59,7 +52,7 @@ export class MembersController {
   async setStatus(
     @CurrentUser() actor: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(statusSchema)) body: z.infer<typeof statusSchema>,
+    @Body(new ZodValidationPipe(memberStatusSchema)) body: MemberStatusInput,
   ): Promise<ProfileDto> {
     if (id === actor.id) throw new BadRequestException('You cannot block yourself');
     const blockedReason = body.status === 'BLOCKED' ? body.reason : null;

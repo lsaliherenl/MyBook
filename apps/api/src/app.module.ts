@@ -11,6 +11,7 @@ import { HealthController } from './health/health.controller.js';
 import { ImportModule } from './import/import.module.js';
 import { MeController } from './me/me.controller.js';
 import { MembersController } from './members/members.controller.js';
+import { MembersService } from './members/members.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SupabaseModule } from './supabase/supabase.module.js';
 
@@ -30,5 +31,6 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     AccountModule,
   ],
   controllers: [HealthController, MeController, MembersController],
+  providers: [MembersService],
 })
 export class AppModule {}

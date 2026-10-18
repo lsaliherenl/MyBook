@@ -152,12 +152,16 @@ export class CirculationService {
 
   // ─── Member: loans ─────────────────────────────────────────────────────────
 
-  async renew(member: AuthUser, loanId: string): Promise<LoanDto> {
+  /** Members renew their own loans; librarians may renew on a member's behalf (same rules). */
+  async renew(actor: AuthUser, loanId: string): Promise<LoanDto> {
     const now = this.clock.now();
+    const isStaff = ROLE_RANK[actor.role] >= ROLE_RANK.LIBRARIAN;
     await this.prisma.$transaction(async (tx) => {
-      await lockMember(tx, member.id);
+      const owner = await tx.loan.findUnique({ where: { id: loanId }, select: { memberId: true } });
+      if (!owner || (owner.memberId !== actor.id && !isStaff)) throw new CirculationException('loan_not_found');
+      await lockMember(tx, owner.memberId);
       const loan = await tx.loan.findUnique({ where: { id: loanId }, include: { copy: { select: { bookId: true } } } });
-      if (!loan || loan.memberId !== member.id || loan.status !== 'ACTIVE') throw new CirculationException('loan_not_found');
+      if (!loan || loan.status !== 'ACTIVE') throw new CirculationException('loan_not_found');
       const settings = await loadSettings(tx);
       if (daysOverdue(loan.dueAt, now) > 0) throw new CirculationException('loan_overdue');
       if (loan.renewCount >= settings.maxRenewals) throw new CirculationException('renewal_limit_reached');
@@ -168,7 +172,7 @@ export class CirculationService {
         where: { id: loanId },
         data: { dueAt: addDays(loan.dueAt, settings.loanDays), renewCount: { increment: 1 } },
       });
-      await tx.auditLog.create({ data: { actorId: member.id, action: 'loan.renew', entityType: 'loan', entityId: loanId } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: 'loan.renew', entityType: 'loan', entityId: loanId } });
     }, TX_OPTIONS);
     return this.loanDto(loanId);
   }
