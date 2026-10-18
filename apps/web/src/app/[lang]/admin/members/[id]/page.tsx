@@ -178,7 +178,7 @@ async function MemberView({ t, locale, params }: { t: Dictionary; locale: Locale
                 </span>
               </div>
             </section>
-            <RoleControl memberId={p.id} role={p.role} editable={staff.role === "ADMIN" && !self} roles={t.admin.roles} text={k} errors={errors} />
+            <RoleControl memberId={p.id} role={p.role} editable={staff.role === "ADMIN" && !self} self={self} roles={t.admin.roles} text={k} errors={errors} />
             <NotesCard memberId={p.id} notes={member.notes} locale={locale} text={k} errors={errors} />
           </aside>
         </div>

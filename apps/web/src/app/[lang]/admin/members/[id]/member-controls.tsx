@@ -225,7 +225,7 @@ export function FinesCard({ fines, accruing, locale, text: k, errors }: { fines:
   );
 }
 
-export function RoleControl({ memberId, role, editable, roles, text: k, errors }: { memberId: string; role: Role; editable: boolean; roles: Record<Role, string>; text: Text; errors: Errors }) {
+export function RoleControl({ memberId, role, editable, self, roles, text: k, errors }: { memberId: string; role: Role; editable: boolean; self: boolean; roles: Record<Role, string>; text: Text; errors: Errors }) {
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   return (
@@ -249,7 +249,7 @@ export function RoleControl({ memberId, role, editable, roles, text: k, errors }
           </option>
         ))}
       </select>
-      {!editable && <span className="text-xs text-ink-muted">{k.roleHint}</span>}
+      {!editable && <span className="text-xs text-ink-muted">{self ? k.self : k.roleHint}</span>}
       <Note message={message} />
     </section>
   );

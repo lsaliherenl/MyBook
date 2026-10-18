@@ -1307,7 +1307,7 @@
       "kpiOverdue": "With overdue loans",
       "kpiOverdueNote": "Fines over {limit} pause borrowing",
       "findLabel": "Find a member",
-      "findPlaceholder": "Name, student number, card or e-mail",
+      "findPlaceholder": "Name, number, card or e-mail",
       "chipsLabel": "Filter members",
       "chips": {
         "all": "All",

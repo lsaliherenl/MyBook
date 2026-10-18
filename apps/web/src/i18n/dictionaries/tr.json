@@ -1307,7 +1307,7 @@
       "kpiOverdue": "Gecikmesi olan",
       "kpiOverdueNote": "{limit} üstü ceza ödünç almayı durdurur",
       "findLabel": "Üye bul",
-      "findPlaceholder": "Ad, öğrenci numarası, kart ya da e-posta",
+      "findPlaceholder": "Ad, numara, kart ya da e-posta",
       "chipsLabel": "Üyeleri filtrele",
       "chips": {
         "all": "Tümü",
