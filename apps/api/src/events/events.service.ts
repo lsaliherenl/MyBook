@@ -6,7 +6,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EVENTS_BUCKET, SupabaseService } from '../supabase/supabase.service.js';
 
-const eventInclude = {
+export const eventInclude = {
   _count: { select: { registrations: { where: { waitlisted: false } } } },
 } satisfies Prisma.EventInclude;
 
@@ -123,7 +123,7 @@ export class EventsService {
     return { status: 'waitlisted', waitlistPosition: ahead + 1, remind: mine.remind };
   }
 
-  private async waitlistCounts(eventIds: string[]): Promise<Map<string, number>> {
+  async waitlistCounts(eventIds: string[]): Promise<Map<string, number>> {
     if (!eventIds.length) return new Map();
     const rows = await this.prisma.eventRegistration.groupBy({
       by: ['eventId'],
@@ -133,7 +133,7 @@ export class EventsService {
     return new Map(rows.map((r) => [r.eventId, r._count._all]));
   }
 
-  private toDto(event: EventWithCounts, waitlisted: number): EventDto {
+  toDto(event: EventWithCounts, waitlisted: number): EventDto {
     return {
       id: event.id,
       slug: event.slug,

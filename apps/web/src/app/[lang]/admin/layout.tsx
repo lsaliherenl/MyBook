@@ -60,9 +60,9 @@ function navItems(t: Dictionary, locale: Locale): AdminNavItem[] {
     { key: "books", label: n.books, href: `${base}/books` },
     { key: "import", label: n.import, href: `${base}/import` },
     { key: "members", label: n.members, href: `${base}/members` },
-    { key: "events", label: n.events },
-    { key: "reports", label: n.reports },
-    { key: "settings", label: n.settings },
+    { key: "events", label: n.events, href: `${base}/events` },
+    { key: "reports", label: n.reports, href: `${base}/reports` },
+    { key: "settings", label: n.settings, href: `${base}/settings` },
   ];
 }
 

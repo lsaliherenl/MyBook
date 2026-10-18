@@ -431,3 +431,25 @@ describe('circulation desk screen', () => {
     expect(later.activeLoansWeekAgo).toBe(1);
   });
 });
+
+describe('reports page', () => {
+  it('summarises a period: loans, on-time returns, readers, fines, months, categories and top books', async () => {
+    const ayse = await newMember();
+    const book = await createBook(db, 'Puslu Kıtalar Atlası', 2);
+    const category = await db.prisma.category.create({ data: { slug: 'novel', nameTr: 'Roman', nameEn: 'Novel' } });
+    await db.prisma.bookCategory.create({ data: { bookId: book.id, categoryId: category.id } });
+    await circulation.checkout(librarian, ayse.id, book.copies[0].barcode); // Thu 1 Oct
+    clock.advance(15 * DAY); // one day late
+    const { fine } = await circulation.returnCopy(librarian, book.copies[0].barcode);
+    await desk.payFine(librarian, fine!.id);
+
+    const month = await reports.summary('month');
+    expect(month).toMatchObject({ loans: 1, loansBefore: 0, returnedOnTimePct: 0, activeReaders: 1, finesCollected: 2.5, finesWaived: 0 });
+    expect(month.months).toHaveLength(12);
+    expect(month.months.at(-1)).toEqual({ month: '2026-10', loans: 1, previousYear: 0 });
+    expect(month.categories).toEqual([{ category: { slug: 'novel', nameTr: 'Roman', nameEn: 'Novel' }, loans: 1 }]);
+    expect(month.topBooks[0]).toMatchObject({ loans: 1, copies: 2, book: { title: 'Puslu Kıtalar Atlası' } });
+
+    expect((await reports.summary('week')).loans).toBe(0); // the loan was two weeks ago
+  });
+});

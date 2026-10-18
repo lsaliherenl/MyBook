@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DashboardDto, OverdueRowDto, PopularBookDto } from '@mybook/shared';
+import type { DashboardDto, OverdueRowDto, PopularBookDto, ReportRange, ReportSummaryDto } from '@mybook/shared';
 import { bookInclude, toBookSummary } from '../catalog/book.mapper.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
@@ -115,13 +115,102 @@ export class ReportsService {
     return { title: book.title, slug: book.slug, waiting: top._count.bookId };
   }
 
+  /** B19: loans, on-time returns, readers and fines for a period, with monthly and category breakdowns. */
+  async summary(range: ReportRange): Promise<ReportSummaryDto> {
+    const now = this.clock.now();
+    const from = reportStart(range, now);
+    const before = new Date(from.getTime() - (now.getTime() - from.getTime()));
+
+    const loans = await this.prisma.loan.count({ where: { checkedOutAt: { gte: from, lte: now } } });
+    const loansBefore = await this.prisma.loan.count({ where: { checkedOutAt: { gte: before, lt: from } } });
+    // The current period includes this moment; the one before ends where this one starts.
+    const onTime = async (a: Date, b: Date, current: boolean) => {
+      const returned = await this.prisma.loan.findMany({ where: { returnedAt: current ? { gte: a, lte: b } : { gte: a, lt: b } }, select: { dueAt: true, returnedAt: true } });
+      return returned.length ? Math.round((returned.filter((l) => l.returnedAt! <= l.dueAt).length / returned.length) * 100) : null;
+    };
+    const readers = await this.prisma.loan.findMany({ where: { checkedOutAt: { gte: from, lte: now } }, distinct: ['memberId'], select: { memberId: true } });
+    const paid = await this.prisma.fine.aggregate({ where: { status: 'PAID', paidAt: { gte: from, lte: now } }, _sum: { amount: true } });
+    const waivedLogs = await this.prisma.auditLog.findMany({ where: { action: 'fine.waived', createdAt: { gte: from, lte: now } }, select: { entityId: true } });
+    const waived = waivedLogs.length
+      ? await this.prisma.fine.aggregate({ where: { id: { in: waivedLogs.map((l) => l.entityId) } }, _sum: { amount: true } })
+      : { _sum: { amount: 0 } };
+
+    return {
+      range,
+      from: from.toISOString(),
+      to: now.toISOString(),
+      loans,
+      loansBefore,
+      returnedOnTimePct: await onTime(from, now, true),
+      returnedOnTimePctBefore: await onTime(before, from, false),
+      activeReaders: readers.length,
+      members: await this.prisma.profile.count(),
+      finesCollected: Number(paid._sum.amount ?? 0),
+      finesWaived: Number(waived._sum.amount ?? 0),
+      months: await this.months(now),
+      categories: await this.categories(from, now),
+      topBooks: await this.topBooks(from, now),
+    };
+  }
+
+  private async months(now: Date): Promise<ReportSummaryDto['months']> {
+    const local = new Date(now.getTime() + 3 * 3_600_000);
+    const monthKey = (offset: number) => {
+      const d = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() - offset, 1));
+      return d.toISOString().slice(0, 7);
+    };
+    const since = libraryDayStart(new Date(`${monthKey(23)}-01T12:00:00Z`));
+    const rows = await this.prisma.$queryRaw<{ month: string; count: bigint }[]>`
+      SELECT to_char((checked_out_at AT TIME ZONE 'UTC') + interval '3 hours', 'YYYY-MM') AS month, count(*) AS count
+      FROM loans WHERE checked_out_at >= ${since}
+      GROUP BY 1`;
+    const count = (key: string) => Number(rows.find((r) => r.month === key)?.count ?? 0);
+    return Array.from({ length: 12 }, (_, i) => {
+      const offset = 11 - i;
+      return { month: monthKey(offset), loans: count(monthKey(offset)), previousYear: count(monthKey(offset + 12)) };
+    });
+  }
+
+  private async categories(from: Date, to: Date): Promise<ReportSummaryDto['categories']> {
+    const rows = await this.prisma.$queryRaw<{ category_id: string | null; loans: bigint }[]>`
+      SELECT bc.category_id, count(*) AS loans
+      FROM loans l
+      JOIN book_copies c ON c.id = l.copy_id
+      LEFT JOIN book_categories bc ON bc.book_id = c.book_id
+      WHERE l.checked_out_at >= ${from} AND l.checked_out_at <= ${to}
+      GROUP BY bc.category_id
+      ORDER BY loans DESC`;
+    const categories = await this.prisma.category.findMany({ where: { id: { in: rows.flatMap((r) => (r.category_id ? [r.category_id] : [])) } } });
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    return rows.map((r) => {
+      const c = r.category_id ? byId.get(r.category_id) : undefined;
+      return { category: c ? { slug: c.slug, nameTr: c.nameTr, nameEn: c.nameEn } : null, loans: Number(r.loans) };
+    });
+  }
+
+  private async topBooks(from: Date, to: Date, limit = 8): Promise<ReportSummaryDto['topBooks']> {
+    const top = await this.prisma.$queryRaw<{ book_id: string; loans: bigint }[]>`
+      SELECT c.book_id, count(*) AS loans
+      FROM loans l JOIN book_copies c ON c.id = l.copy_id
+      WHERE l.checked_out_at >= ${from} AND l.checked_out_at <= ${to}
+      GROUP BY c.book_id
+      ORDER BY loans DESC, c.book_id
+      LIMIT ${limit}`;
+    const books = await this.prisma.book.findMany({ where: { id: { in: top.map((t) => t.book_id) } }, include: bookInclude });
+    const byId = new Map(books.map((b) => [b.id, b]));
+    return top.map((t) => {
+      const summary = toBookSummary(byId.get(t.book_id)!, this.supabase);
+      return { book: summary, loans: Number(t.loans), copies: summary.availability.total };
+    });
+  }
+
   async overdue(): Promise<OverdueRowDto[]> {
     const now = this.clock.now();
     const settings = await this.prisma.$transaction((tx) => loadSettings(tx));
     const loans = await this.prisma.loan.findMany({
       where: { status: 'ACTIVE', dueAt: { lt: now } },
       include: {
-        member: { select: { id: true, fullName: true, email: true, cardNumber: true } },
+        member: { select: { id: true, fullName: true, email: true, cardNumber: true, memberType: true } },
         copy: { select: { barcode: true, book: { select: { title: true } } } },
       },
       orderBy: { dueAt: 'asc' },
@@ -134,6 +223,7 @@ export class ReportsService {
         memberName: l.member.fullName,
         memberEmail: l.member.email,
         cardNumber: l.member.cardNumber,
+        memberType: l.member.memberType,
         bookTitle: l.copy.book.title,
         copyBarcode: l.copy.barcode,
         dueAt: l.dueAt.toISOString(),
@@ -180,4 +270,23 @@ function startOfIsoWeek(date: Date): Date {
   const day = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() - (day - 1));
   return d;
+}
+
+/** Where a report period starts, in library time: this week, this month, this term (Sep 1 / Feb 1) or the last 12 months. */
+export function reportStart(range: ReportRange, now: Date): Date {
+  const local = new Date(now.getTime() + 3 * 3_600_000);
+  const y = local.getUTCFullYear();
+  const m = local.getUTCMonth();
+  const midnight = (year: number, month: number, day: number) => libraryDayStart(new Date(Date.UTC(year, month, day, 12)));
+  switch (range) {
+    case 'week':
+      return libraryWeekStart(now);
+    case 'month':
+      return midnight(y, m, 1);
+    case 'term':
+      // Fall term from 1 September, spring term from 1 February.
+      return m >= 8 ? midnight(y, 8, 1) : m >= 1 ? midnight(y, 1, 1) : midnight(y - 1, 8, 1);
+    case 'year':
+      return addDays(libraryDayStart(now), -365);
+  }
 }

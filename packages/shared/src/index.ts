@@ -8,3 +8,4 @@ export * from './events.js';
 export * from './account.js';
 export * from './admin-books.js';
 export * from './admin-members.js';
+export * from './admin-misc.js';

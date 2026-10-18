@@ -199,6 +199,7 @@ export interface OverdueRowDto {
   memberName: string;
   memberEmail: string;
   cardNumber: string;
+  memberType: 'STUDENT' | 'ACADEMIC' | 'STAFF';
   bookTitle: string;
   copyBarcode: string;
   dueAt: string;

@@ -4,6 +4,7 @@ import {
   checkoutSchema,
   deskCopyQuerySchema,
   deskLookupSchema,
+  REPORT_RANGES,
   returnSchema,
   updateSettingsSchema,
   waiveFineSchema,
@@ -19,6 +20,8 @@ import { CirculationService } from './circulation.service.js';
 import { DeskService } from './desk.service.js';
 import { ReportsService } from './reports.service.js';
 import { SettingsService } from './settings.service.js';
+
+const summarySchema = z.object({ range: z.enum(REPORT_RANGES).default('month') });
 
 const popularSchema = z.object({
   days: z.coerce.number().int().min(1).max(3650).default(90),
@@ -96,6 +99,11 @@ export class DeskController {
   @Get('reports/dashboard')
   dashboard() {
     return this.reports.dashboard();
+  }
+
+  @Get('reports/summary')
+  summary(@Query(new ZodValidationPipe(summarySchema)) query: z.infer<typeof summarySchema>) {
+    return this.reports.summary(query.range);
   }
 
   @Get('reports/overdue')
