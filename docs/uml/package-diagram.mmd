@@ -1,0 +1,62 @@
+%% MyBook — package diagram (Paket diyagramı)
+%% Logical packages and the dependencies between them. Each inner package is a real folder:
+%% apps/web/src/app/[lang]/(site|auth|admin), apps/api/src/<module>, packages/shared/src.
+%% Mermaid has no package-diagram type, so packages are drawn as nested frames and
+%% dependencies as dashed «use» / «import» arrows.
+flowchart TB
+  subgraph Presentation["«package» Presentation · apps/web (Next.js)"]
+    direction LR
+    MemberSite["«package» Member site<br/>home · catalog · book page<br/>collections · events · account"]
+    AuthPages["«package» Auth<br/>login · register · password"]
+    AdminPanel["«package» Librarian panel<br/>dashboard · desk · books · import<br/>members · events · reports · settings"]
+    WebLib["«package» Web services<br/>api client · i18n · cache"]
+  end
+
+  subgraph Application["«package» Application · apps/api (NestJS)"]
+    direction LR
+    AuthMod["«package» auth<br/>JWT check · roles"]
+    Catalog["«package» catalog<br/>search · facets · collections"]
+    Circulation["«package» circulation<br/>reservations · loans · fines<br/>desk · reports · settings"]
+    Accounts["«package» account / members<br/>profile · lists · history"]
+    Events["«package» events<br/>programme · RSVP · waitlist"]
+    Books["«package» books / import<br/>book admin · ISBN import"]
+  end
+
+  subgraph Domain["«package» Domain · packages/shared"]
+    direction LR
+    Dtos["«package» DTOs & validation<br/>zod schemas"]
+    Rules["«package» rules<br/>loan rules · search folding"]
+  end
+
+  subgraph Data["«package» Data access"]
+    direction LR
+    Prisma["«package» prisma<br/>schema · migrations · client"]
+    Storage["«package» supabase<br/>covers storage"]
+  end
+
+  subgraph External["«package» External services"]
+    direction LR
+    SupabaseAuth["Supabase Auth"]
+    BookSources["Google Books · Open Library · Apple Books"]
+  end
+
+  MemberSite -.->|«use»| WebLib
+  AuthPages -.->|«use»| WebLib
+  AdminPanel -.->|«use»| WebLib
+  AuthPages -.->|«use»| SupabaseAuth
+  WebLib -.->|«use» REST + JWT| Application
+
+  Presentation -.->|«import»| Domain
+  Application -.->|«import»| Domain
+
+  AuthMod -.->|«use» public keys| SupabaseAuth
+  Catalog -.->|«use»| Prisma
+  Circulation -.->|«use»| Prisma
+  Accounts -.->|«use»| Prisma
+  Events -.->|«use»| Prisma
+  Books -.->|«use»| Prisma
+  Books -.->|«use»| Storage
+  Books -.->|«use»| BookSources
+  Events -.->|«use»| Circulation
+  Books -.->|«use»| Circulation
+  Accounts -.->|«use»| Circulation

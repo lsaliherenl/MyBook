@@ -1,0 +1,87 @@
+%% MyBook — object diagram (Nesne diyagramı)
+%% A snapshot of one moment: Ayşe Yılmaz, a student, reserved "Kürk Mantolu Madonna" online and
+%% collected copy BK0000001 at the desk from librarian Mehmet Demir. The loan is active and due in
+%% 14 days. Mermaid has no object-diagram type, so objects are drawn as boxes named
+%% "object : Class" with attribute values (UML's underline cannot be shown).
+classDiagram
+  direction LR
+
+  class ayse["ayse : User"] {
+    fullName = "Ayşe Yılmaz"
+    cardNumber = "MB00000001"
+    studentNumber = "220201045"
+    memberType = STUDENT
+    role = MEMBER
+    status = ACTIVE
+  }
+
+  class mehmet["mehmet : User"] {
+    fullName = "Mehmet Demir"
+    role = LIBRARIAN
+    status = ACTIVE
+  }
+
+  class kurk["kurkMantolu : Book"] {
+    title = "Kürk Mantolu Madonna"
+    isbn13 = "9789750806978"
+    language = "tr"
+    publishedYear = 1943
+  }
+
+  class sabahattin["sabahattinAli : Author"] {
+    name = "Sabahattin Ali"
+  }
+
+  class literature["turkishLit : Category"] {
+    nameTr = "Türk Edebiyatı"
+    nameEn = "Turkish Literature"
+  }
+
+  class copy1["copy1 : BookCopy"] {
+    barcode = "BK0000001"
+    shelfLocation = "TE-100"
+    status = ON_LOAN
+    condition = GOOD
+  }
+
+  class copy2["copy2 : BookCopy"] {
+    barcode = "BK0000002"
+    shelfLocation = "TE-100"
+    status = AVAILABLE
+    condition = GOOD
+  }
+
+  class reservation["r4K7Q : Reservation"] {
+    code = "MB-4K7Q"
+    status = FULFILLED
+    readyAt = 2026-10-12 10:05
+    expiresAt = 2026-10-14 10:05
+  }
+
+  class loan["loan1 : Loan"] {
+    checkedOutAt = 2026-10-12 14:21
+    dueAt = 2026-10-26 14:21
+    returnedAt = null
+    renewCount = 0
+    status = ACTIVE
+  }
+
+  class rules["rules : LibrarySettings"] {
+    loanDays = 14
+    maxActiveLoans = 5
+    maxRenewals = 1
+    pickupWindowHours = 48
+    finePerDay = 2.50
+  }
+
+  kurk -- sabahattin : written by
+  kurk -- literature : filed under
+  kurk *-- copy1
+  kurk *-- copy2
+  ayse -- reservation : places
+  reservation --> kurk : for
+  ayse -- loan : borrows
+  mehmet -- loan : checks out
+  loan --> copy1 : lends
+  loan -- reservation : fulfils
+  loan ..> rules : dueAt = checkedOutAt + loanDays

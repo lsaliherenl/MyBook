@@ -1,0 +1,43 @@
+%% MyBook — deployment diagram (Dağıtım diyagramı)
+%% Where each part runs and how the nodes talk. Web, API and database are separate nodes:
+%% the browser only ever talks to the web server; the web server calls the API; only the API
+%% touches the database. Ports are the ones the project uses (web 3000, API 4000, Supabase pooler 6543).
+%% Mermaid has no deployment-diagram type, so nodes are frames and artifacts are boxes inside them.
+flowchart LR
+  subgraph Client["«device» User device"]
+    Browser["«execution environment»<br/>Web browser<br/>— pages, service worker (offline pass)"]
+  end
+
+  subgraph WebNode["«node» Web server · Node.js ≥ 22"]
+    NextApp["«artifact»<br/>apps/web<br/>Next.js 16 (SSR, server actions)<br/>:3000"]
+  end
+
+  subgraph ApiNode["«node» Application server · Node.js ≥ 22"]
+    NestApp["«artifact»<br/>apps/api<br/>NestJS REST API + Prisma<br/>:4000 /api"]
+    Jobs["«artifact»<br/>scheduled job<br/>hold expiry"]
+  end
+
+  subgraph Supabase["«node» Supabase cloud · eu-central-1"]
+    Postgres[("«database»<br/>PostgreSQL<br/>via PgBouncer pooler :6543")]
+    Auth["«service»<br/>Supabase Auth<br/>JWT + JWKS"]
+    Bucket["«service»<br/>Storage · covers bucket<br/>public CDN"]
+  end
+
+  subgraph Providers["«node» External book APIs"]
+    Google["Google Books API"]
+    OpenLib["Open Library API"]
+    Apple["Apple Books Search API"]
+  end
+
+  Browser -->|HTTPS · HTML, server actions| NextApp
+  Browser -->|HTTPS · cover images via /_next/image| NextApp
+  NextApp -->|HTTPS · REST/JSON · Bearer JWT| NestApp
+  NextApp -->|HTTPS · sign-in, session cookies| Auth
+  NextApp -->|HTTPS · image optimizer fetch| Bucket
+  NestApp -->|TCP · SQL over TLS| Postgres
+  Jobs --- NestApp
+  NestApp -->|HTTPS · public keys| Auth
+  NestApp -->|HTTPS · upload covers| Bucket
+  NestApp -->|HTTPS · ISBN / title lookup| Google
+  NestApp -->|HTTPS| OpenLib
+  NestApp -->|HTTPS| Apple

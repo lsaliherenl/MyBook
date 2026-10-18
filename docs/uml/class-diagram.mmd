@@ -1,0 +1,161 @@
+%% MyBook — class diagram (Sınıf diyagramı)
+%% Drawn from the real data model in apps/api/prisma/schema.prisma and the services that act on it
+%% (CirculationService, EventsService, BooksAdminService …). Attributes are trimmed to the ones that
+%% matter for the domain; ids, timestamps and join tables (BookAuthor, BookCategory) are left out.
+classDiagram
+  direction LR
+
+  class User {
+    +String fullName
+    +String email
+    +String cardNumber
+    +String studentNumber
+    +MemberType memberType
+    +Role role
+    +AccountStatus status
+    +reserve(books) Reservation[]
+    +renew(loan) Loan
+    +rsvp(event) EventRegistration
+  }
+
+  class Book {
+    +String title
+    +String isbn13
+    +String language
+    +int publishedYear
+    +String coverPath
+    +availability() Availability
+  }
+
+  class Author {
+    +String name
+  }
+
+  class Publisher {
+    +String name
+  }
+
+  class Category {
+    +String nameTr
+    +String nameEn
+  }
+
+  class BookCopy {
+    +String barcode
+    +String shelfLocation
+    +CopyStatus status
+    +CopyCondition condition
+  }
+
+  class Reservation {
+    +String code
+    +ReservationStatus status
+    +DateTime readyAt
+    +DateTime expiresAt
+    +cancel()
+    +expire()
+  }
+
+  class Loan {
+    +DateTime checkedOutAt
+    +DateTime dueAt
+    +DateTime returnedAt
+    +int renewCount
+    +LoanStatus status
+    +daysOverdue() int
+    +checkIn() Fine
+  }
+
+  class Fine {
+    +FineReason reason
+    +Decimal amount
+    +FineStatus status
+    +pay()
+    +waive(note)
+  }
+
+  class Event {
+    +String titleTr
+    +String titleEn
+    +EventKind kind
+    +DateTime startsAt
+    +int capacity
+    +boolean rsvpRequired
+  }
+
+  class EventRegistration {
+    +boolean waitlisted
+    +boolean remind
+  }
+
+  class ReadingList {
+    +String name
+  }
+
+  class LibrarySettings {
+    +int loanDays
+    +int maxActiveLoans
+    +int maxRenewals
+    +int pickupWindowHours
+    +Decimal finePerDay
+    +Decimal fineBlockThreshold
+  }
+
+  class Role {
+    <<enumeration>>
+    MEMBER
+    LIBRARIAN
+    ADMIN
+  }
+
+  class CopyStatus {
+    <<enumeration>>
+    AVAILABLE
+    ON_HOLD
+    ON_LOAN
+    IN_REPAIR
+    LOST
+    WITHDRAWN
+  }
+
+  class ReservationStatus {
+    <<enumeration>>
+    PENDING
+    READY
+    FULFILLED
+    CANCELLED
+    EXPIRED
+  }
+
+  %% Catalog
+  Book "0..*" -- "1..*" Author : written by
+  Book "0..*" -- "0..1" Publisher : published by
+  Book "0..*" -- "0..*" Category : filed under
+  Category "0..*" -- "0..1" Category : parent
+  Book "1" *-- "0..*" BookCopy : copies
+
+  %% Circulation
+  User "1" -- "0..*" Reservation : places
+  Reservation "0..*" --> "1" Book : for
+  Reservation "0..1" --> "0..1" BookCopy : holds
+  User "1" -- "0..*" Loan : borrows
+  User "1" -- "0..*" Loan : checks out (librarian)
+  Loan "0..*" --> "1" BookCopy : lends
+  Loan "0..1" -- "0..1" Reservation : fulfils
+  Loan "1" -- "0..*" Fine : charges
+  User "1" -- "0..*" Fine : owes
+
+  %% Programme and personal shelves
+  Event "1" *-- "0..*" EventRegistration : sign-ups
+  User "1" -- "0..*" EventRegistration : signs up
+  Event "0..*" --> "0..1" Book : book to bring
+  User "1" *-- "0..*" ReadingList : keeps
+  ReadingList "0..*" o-- "0..*" Book : contains
+
+  %% Rules every circulation step reads
+  Loan ..> LibrarySettings : due date, fines
+  Reservation ..> LibrarySettings : pickup window
+
+  User ..> Role
+  BookCopy ..> CopyStatus
+  Reservation ..> ReservationStatus
