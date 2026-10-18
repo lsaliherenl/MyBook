@@ -2,110 +2,134 @@
 
 [English](README.md) · **Türkçe**
 
-Bir üniversite kütüphanesi için, kitapçı estetiğinden ilham alan editoryal arayüze sahip full-stack kütüphane
-yönetim sistemi. Üyeler kataloğu gezer, kitapları online rezerve eder ve gişeden teslim alır; kütüphaneciler
-teslim ve iadeleri onaylar, kitapları açık kitap API'lerinden içe aktarır ve gecikmeleri takip eder.
+Bir üniversite kütüphanesi için, kitapçı estetiğinden ilham alan editoryal arayüze sahip, Türkçe ve İngilizce
+full-stack kütüphane sistemi. Üyeler kataloğu gezer, kitapları online ayırtır ve gişeden teslim kodu ile alır;
+kütüphaneciler ödünç masasını yönetir, kitapları açık kitap API'lerinden içe aktarır, üyeleri ve etkinlikleri
+yönetir, raporları izler.
 
-> 🚧 **Geliştirme aşamasında.** Tasarım ve mimari hazırlanıyor; henüz çalıştırılabilir bir sürüm yok.
+![Ana sayfa](docs/screenshots/tr-home.webp)
 
-## Planlanan özellikler
+## Üyeler için
 
-**Üyeler**
-- Filtreli katalog araması (kategori, dil, müsaitlik, yıl)
-- Ödünç çantası → online rezervasyon → gişede teslim kodu
-- Aktif ödünçler, iade tarihleri, süre uzatma, cezalar ve okuma geçmişi
-- Kayıt olunabilen kütüphane etkinlikleri
-- Türkçe ve İngilizce arayüz
+| | |
+|---|---|
+| ![Katalog](docs/screenshots/tr-catalog.webp) | ![Kitap sayfası](docs/screenshots/tr-book.webp) |
+| **Katalog** — başlık, yazar ya da ISBN ile arama (Türkçe karakterler fark etmez: *kurk* yazınca *Kürk* bulunur); kategori, dil, yıl ve rafta olma durumuna göre filtre. | **Kitap sayfası** — raftaki, ödünçteki ve ayrılmış kopyalar, bekleme listesi; tek düğmeyle ayırtma ya da sıraya girme. |
+| ![Koleksiyonlar](docs/screenshots/tr-collections.webp) | ![Etkinlikler](docs/screenshots/tr-events.webp) |
+| **Koleksiyonlar** — kütüphanecilerin hazırladığı raflar: ders rezervleri, Türk klasikleri, bilim, yeni gelenler. | **Etkinlikler** — okuma halkaları, atölyeler ve söyleşiler; koltuk ayırtma, bekleme listesi ve takvim aboneliği. |
+| ![Hesabım](docs/screenshots/tr-account.webp) | ![Telefon](docs/screenshots/tr-mobile.webp) |
+| **Hesabım** — son günleri ve yenilemeleriyle ödünçler, teslim kartlı (QR) rezervasyonlar, cezalar, okuma geçmişi, listeler ve dijital kütüphane kartı. | **Telefonda** — tüm sayfalar mobil uyumlu; bir kez açılan teslim kartı ve hesap sayfaları bağlantı yokken de açılır. |
 
-**Kütüphaneciler**
-- Gişe ekranı: barkod / QR okutarak teslim ve iade onayı
-- ISBN, başlık araması veya barkod ile Google Books, Open Library ve Apple Books'tan kitap içe aktarma
-- Kopya bazında stok takibi (her fiziksel kopyanın kendi barkodu ve durumu var)
-- Gecikme raporları, popüler kitaplar ve istatistikler
+- **Ödünç çantası:** gezinirken kitapları topla, hepsini tek seferde ayırt; birlikte ayırtılan kitaplar tek bir
+  teslim kodunu paylaşır.
+- **Rezervasyon:** rafta kopya varsa hemen ayırma rafına konur (teslim için 48 saat, Pazar sayılmaz); yoksa üye
+  sıraya girer ve geri gelen ilk kopya ona ayrılır.
+- **Hesap:** ödünç yenileme (bekleyen yoksa bir kez), cezaları görme, kişisel verileri indirme (KVKK) ve hesabı
+  kapatma.
 
-## Teknoloji yığını (planlanan)
+## Kütüphaneciler için
+
+| | |
+|---|---|
+| ![Ödünç masası](docs/screenshots/tr-admin-desk.webp) | ![Kitaplar](docs/screenshots/tr-admin-books.webp) |
+| **Ödünç masası** — üyeyi kart, teslim kodu ya da adla bul; kopyaları okut (ödünç vermeden önce rezervasyonla karşılaştırılır), birden çok kitabı tek seferde ver; iadede kondisyon, ceza ve sıradaki okur için ayırma. Klavye öncelikli: F2 / F3 / Esc. | **Kitaplar** — her başlık için raftaki, ödünçteki ve ayrılmış kopyalar; filtreler, CSV dışa aktarma, toplu raf, kategori ve kayıttan düşme. Her kayıtta kopyalar (durum, kondisyon, ödünç geçmişi) ve hareket geçmişi. |
+| ![Etkinlik yönetimi](docs/screenshots/tr-admin-events.webp) | |
+| **Etkinlik yönetimi** — yaklaşan, taslak ve geçmiş etkinlikler; koltuklar ve bekleme listeleri, iki dilli düzenleyici ve katılımcı listeleri. | |
+
+- **Pano:** günün sayıları, bu haftaki ödünçler, teslimler, en çok gecikenler ve ilgilenilmesi gerekenler.
+- **İçe aktarma:** bir kitabı ISBN ya da başlıkla Google Books, Open Library ve Apple Books'ta aynı anda ara;
+  baskıyı ve en iyi kapağı seç, kopya sayısını belirle — ya da bir ISBN CSV'sinin tamamını aktar.
+- **Üyeler:** arama; tür, gecikme ve engel filtreleri; ödünçleri, rezervasyonları, cezaları, geçmişi, personel
+  notları, engelleme ve rolleriyle üye kaydı.
+- **Raporlar:** aylara ve kategorilere göre ödünç, zamanında iade oranı, en çok ödünç alınanlar ve CSV'li gecikme
+  raporu.
+- **Ayarlar:** ödünç süresi, aynı anda kitap sayısı, yenileme, cezalar ve teslim süresi; kitap kaynakları için canlı
+  bağlantı testi.
+
+## Ödünç nasıl işler
+
+```text
+online ayırt ─▶ kopya ayırma rafına (ya da sıraya) ─▶ gişede okutulur ─▶ ödünç ─▶ iade
+```
+
+Varsayılanlar (Ayarlar'dan değiştirilebilir): 14 günlük ödünç, üye başına 5 kitap (ödünçler ve açık rezervasyonlar
+birlikte), bekleyen yoksa bir yenileme, ayrılan kopyayı almak için 48 saat, geciken her gün için ₺2,50. Gecikmiş
+ödüncü, ₺50 ve üzeri ödenmemiş cezası olan ya da elle engellenen üye ayırtamaz ve ödünç alamaz. Alınmayan
+ayırmaların süresi kendiliğinden dolar ve kopya sıradaki okura geçer. Her kural, üyeyi ve ilgili kopyaları kilitleyen
+tek bir veritabanı işleminde uygulanır.
+
+## Teknolojiler
 
 | Katman | Teknoloji |
 |---|---|
-| Web | Next.js 16 (Cache Components), TypeScript, Tailwind CSS, Supabase SSR auth, `[lang]` dil yönlendirmesi |
-| API | NestJS, Prisma |
-| Veritabanı ve depolama | Supabase (PostgreSQL, Storage) |
-| Araçlar | Turborepo monorepo, Docker Compose |
+| Web | Next.js 16 (App Router, Cache Components, server actions), React 19, TypeScript, Tailwind CSS 4 |
+| API | NestJS, Prisma 7, Zod doğrulama |
+| Veritabanı ve depolama | Supabase: PostgreSQL, Auth (JWT, açık JWKS ile doğrulanır), kapaklar için Storage |
+| Kitap verisi | Google Books, Open Library, Apple Books |
+| Araçlar | pnpm workspaces, Turborepo, PGlite ile Vitest, ESLint / oxlint |
+
+Tarayıcı yalnızca web sunucusuyla konuşur; web sunucusu API'yi kullanıcının jetonuyla çağırır; veritabanına
+yalnızca API erişir.
+
+```mermaid
+flowchart LR
+  Browser["Web tarayıcısı"] -->|HTTPS| Web["Next.js web uygulaması :3000"]
+  Web -->|REST + JWT| API["NestJS API :4000"]
+  Web -->|giriş| Auth["Supabase Auth"]
+  API -->|SQL| DB[("PostgreSQL")]
+  API -->|kapaklar| Storage["Supabase Storage"]
+  API -->|ISBN / başlık sorgusu| Books["Google Books · Open Library · Apple Books"]
+```
+
+Sistemin UML diyagramları (sınıf, nesne, paket ve dağıtım) [`docs/uml`](docs/uml) klasöründe.
 
 ## Kurulum
 
-Gereksinimler: Node.js 22+, pnpm 12, bir Supabase projesi.
+Gerekenler: Node.js 22+, pnpm, bir Supabase projesi ve (isteğe bağlı) Google Books API anahtarı.
 
 ```bash
 pnpm install
-cp .env.example .env        # ardından değerleri doldurun
+cp .env.example .env                        # ardından değerleri doldur
 pnpm --filter @mybook/api db:migrate
-pnpm --filter @mybook/api db:seed     # isteğe bağlı: kategoriler + kapaklı ~150 demo kitap
-pnpm dev                    # web → http://localhost:3000 · API → http://localhost:4000/api
+pnpm --filter @mybook/api db:seed           # kategoriler, kapaklı ~150 kitap, kopyalar, etkinlikler, koleksiyonlar
+pnpm dev                                    # web → http://localhost:3000 · API → http://localhost:4000/api
 ```
 
-Web uygulamasından üye olduktan sonra kendinize kütüphaneci veya yönetici rolü verin:
+Web uygulamasından kaydol, sonra kendine kütüphaneci ya da yönetici rolü ver (kütüphaneci paneli `/tr/admin`):
 
 ```bash
-pnpm --filter @mybook/api user:role siz@ornek.edu.tr ADMIN
+pnpm --filter @mybook/api user:role sen@ornek.edu ADMIN
 ```
 
-### API özeti
+Diğer komutlar: `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`; yalnızca koleksiyonları yeniden
+oluşturmak için `pnpm --filter @mybook/api db:seed:collections` (önce `pnpm dev`'i durdur).
 
-| Uç nokta | Erişim |
+## Testler
+
+`pnpm test` birim testlerini ve tüm migration'ları uygulanmış **PGlite** (WebAssembly'ye derlenmiş Postgres)
+üzerinde entegrasyon testlerini çalıştırır; böylece veritabanı kısıtları, tetikleyiciler ve ödünç kuralları birlikte
+test edilir — Docker ya da test veritabanı gerekmez. Zamana bağlı kurallar sahte bir saatle çalışır.
+
+## Proje yapısı
+
+| Yol | Ne |
 |---|---|
-| `GET /api/books?q=&category=&language=&available=&sort=&page=` | herkese açık |
-| `GET /api/books/:slug`, `GET /api/categories` | herkese açık |
-| `GET /api/me`, `PATCH /api/me` | giriş yapmış kullanıcı |
-| `GET /api/admin/import/search?isbn=` veya `?q=` | kütüphaneci |
-| `POST /api/admin/books/import` | kütüphaneci |
-| `GET /api/admin/members`, `PATCH /api/admin/members/:id/status` | kütüphaneci |
-| `PATCH /api/admin/members/:id/role` | yönetici |
-| `GET /api/me/standing`, `/me/reservations`, `/me/loans?status=active\|history`, `/me/fines` | giriş yapmış kullanıcı |
-| `POST /api/reservations` `{ bookIds }`, `DELETE /api/reservations/:id`, `POST /api/loans/:id/renew` | giriş yapmış kullanıcı |
-| `GET /api/admin/desk/lookup?q=` (kart, teslim kodu, öğrenci no, e-posta, ad), `GET /api/admin/desk/members/:id` | kütüphaneci |
-| `POST /api/admin/desk/checkout` `{ memberId, barcode }`, `POST /api/admin/desk/return` `{ barcode }` | kütüphaneci |
-| `POST /api/admin/fines/:id/pay`, `POST /api/admin/fines/:id/waive` | kütüphaneci |
-| `GET /api/admin/reports/dashboard`, `/overdue`, `/overdue.csv`, `/popular` | kütüphaneci |
-| `GET /api/admin/settings`, `PATCH /api/admin/settings` | kütüphaneci / yönetici |
-
-### Ödünç kuralları
-
-Online rezervasyon → bir kopya teslim rafına ayrılır (ya da üye sıraya girer) → kütüphaneci gişede kopyayı okutur →
-ödünç → iade. Varsayılanlar (`library_settings` tablosundan değiştirilebilir): 14 gün ödünç süresi, üye başına 5 kitap
-(ödünçler ve açık rezervasyonlar birlikte), bekleyen yoksa bir kez uzatma, ayrılan kopyayı almak için 48 saat, geciken her
-gün için ₺2,50. Geciken ödüncü, ₺50 ve üzeri ödenmemiş cezası olan ya da elle engellenen üye rezervasyon yapamaz ve ödünç
-alamaz. Alınmayan ayırmalar beş dakikada bir düşürülür ve kopya sıradaki okura geçer.
-
-Reddedilen işlemler HTTP 409 ve sabit bir `code` (ör. `loan_limit_reached`, `copy_reserved_for_another`) ile döner;
-web uygulaması bu kodu çevirir.
-
-### Testler
-
-`pnpm test`, birim testlerini ve ödünç akışının entegrasyon testlerini tüm migration'ların uygulandığı PGlite (WebAssembly
-olarak derlenmiş Postgres) üzerinde çalıştırır; böylece veritabanı kısıtları ve trigger'lar da test edilir. Docker veya
-ayrı bir test veritabanı gerekmez.
-
-Web uygulaması kullanıcıları Supabase Auth ile oturum açtırır ve erişim token'ını API'ye iletir; API token'ı projenin
-herkese açık JWKS anahtarlarıyla doğrular ve kullanıcının rolünü `profiles` tablosundan okur.
-
-| Klasör | İçerik |
-|---|---|
-| `apps/web` | Next.js arayüzü |
-| `apps/api` | NestJS API, Prisma şeması ve migration'lar (`prisma/`) |
-| `packages/shared` | Web ve API'nin ortak tip ve sabitleri |
+| `apps/web` | Next.js uygulaması: üye sitesi (`app/[lang]/(site)`), giriş (`(auth)`) ve kütüphaneci paneli (`admin`) |
+| `apps/api` | NestJS API: `catalog`, `circulation`, `account`, `members`, `events`, `books`, `import` modülleri; Prisma şeması ve migration'lar `prisma/` içinde |
+| `packages/shared` | Web ve API'nin paylaştığı tipler, Zod şemaları ve kurallar |
+| `docs/uml` | UML diyagramları (Mermaid) |
 | `supabase/` | Supabase CLI proje ayarları |
 
-Bazı veritabanı kuralları (kısmi unique index'ler, check kısıtları, Supabase Auth trigger'ı ve satır bazlı güvenlik)
-Prisma şema dilinde ifade edilemediği için ham SQL migration olarak yazıldı. Yeni migration eklerken üretilen SQL'i
-gözden geçirin ki bunlar silinmesin.
+Bazı veritabanı kuralları (kısmi unique index'ler, check kısıtları, Supabase Auth tetikleyicisi ve satır düzeyinde
+güvenlik) Prisma şema dili bunları ifade edemediği için ham SQL migration olarak yazıldı.
 
-## Dokümantasyon
+## Notlar
 
-- UML diyagramları (sınıf, nesne, paket, dağıtım) Mermaid `.mmd` dosyaları olarak [`docs/uml`](docs/uml) altında olacak.
-- Tasarım brifi: [`docs/design/claude-design-brief.md`](docs/design/claude-design-brief.md)
+- Ekran görüntüleri çalışan uygulamanın gerçek sayfalarıdır; giriş gerektiren sayfalarda gerçek bir hesap yerine
+  demo isimler kullanıldı.
+- Arayüz Claude Design'da tasarlandı ve ekran ekran uygulandı.
 
 ## Arka plan
 
 Bu proje bir ders ödevi olarak başladı ("Online Kütüphane Yönetim Sistemi" — UML modelleme) ve eksiksiz,
-gerçek dünyaya uygun bir uygulamaya dönüştürülüyor.
+üretim düzeyinde bir uygulamaya dönüştü. İstenen diyagramlar [`docs/uml`](docs/uml) klasöründe.
