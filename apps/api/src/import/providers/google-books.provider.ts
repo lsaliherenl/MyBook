@@ -26,10 +26,11 @@ interface GoogleVolume {
 export class GoogleBooksProvider implements BookMetadataProvider {
   readonly id = 'GOOGLE_BOOKS' as const;
   readonly timeoutMs = 15_000;
-  private readonly key: string;
+  /** Optional: without a key Google still answers, from a smaller shared quota. */
+  private readonly key: string | undefined;
 
   constructor(config: ConfigService) {
-    this.key = config.getOrThrow<string>('GOOGLE_BOOKS_API_KEY');
+    this.key = config.get<string>('GOOGLE_BOOKS_API_KEY') || undefined;
   }
 
   search(query: string, limit: number) {
@@ -43,7 +44,8 @@ export class GoogleBooksProvider implements BookMetadataProvider {
   private async volumes(q: string, limit: number): Promise<ExternalBookCandidate[]> {
     const url =
       `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}` +
-      `&maxResults=${limit}&printType=books&key=${this.key}`;
+      `&maxResults=${limit}&printType=books` +
+      (this.key ? `&key=${this.key}` : '');
     const res = await getJson<{ items?: GoogleVolume[] }>(url, { timeoutMs: this.timeoutMs, attempts: 4 });
     return (res.items ?? []).filter((v) => v.volumeInfo.title).map((v) => this.toCandidate(v));
   }
