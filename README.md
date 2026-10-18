@@ -131,3 +131,10 @@ are raw SQL migrations because Prisma's schema language cannot express them.
 
 This project started as a class assignment ("Online Library Management System" — UML modelling) and grew into a
 complete, production-style application. The required diagrams are in [`docs/uml`](docs/uml).
+
+## License
+
+[MIT](LICENSE): you are free to use, copy, change and share the code, the UML diagrams, the screenshots and the
+photos in this repository, including in your own projects, as long as the licence notice stays with them. Book
+details and covers are not part of the repository: the app fetches them from Google Books, Open Library and Apple
+Books, and they belong to their publishers.

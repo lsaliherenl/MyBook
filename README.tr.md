@@ -133,3 +133,10 @@ güvenlik) Prisma şema dili bunları ifade edemediği için ham SQL migration o
 
 Bu proje bir ders ödevi olarak başladı ("Online Kütüphane Yönetim Sistemi" — UML modelleme) ve eksiksiz,
 üretim düzeyinde bir uygulamaya dönüştü. İstenen diyagramlar [`docs/uml`](docs/uml) klasöründe.
+
+## Lisans
+
+[MIT](LICENSE): bu depodaki kodu, UML diyagramlarını, ekran görüntülerini ve fotoğrafları, lisans notunu yanlarında
+tuttuğun sürece kendi projelerin dahil özgürce kullanabilir, kopyalayabilir, değiştirebilir ve paylaşabilirsin.
+Kitap bilgileri ve kapaklar depoda yer almaz; uygulama onları Google Books, Open Library ve Apple Books'tan çeker ve
+hakları yayıncılarına aittir.
