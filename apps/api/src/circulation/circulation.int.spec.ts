@@ -168,6 +168,18 @@ describe('desk checkout and return', () => {
     expect((await db.prisma.bookCopy.findUniqueOrThrow({ where: { id: book.copies[0].id } })).status).toBe('ON_LOAN');
   });
 
+  it('moves a loan that would fall due on a Sunday to Monday', async () => {
+    clock.current = new Date('2026-10-18T10:30:00+03:00'); // a Sunday; 14 days on is Sunday 1 Nov
+    const ayse = await newMember();
+    const book = await createBook(db, 'Kürk Mantolu Madonna', 1);
+
+    const result = await circulation.checkoutMany(librarian, ayse.id, [book.copies[0].barcode]);
+
+    const monday = new Date('2026-11-02T10:30:00+03:00').toISOString();
+    expect(result.dueAt).toBe(monday);
+    expect(result.loans[0].dueAt).toBe(monday);
+  });
+
   it('will not hand a held copy to someone else', async () => {
     const [a, b] = [await newMember(), await newMember()];
     const book = await createBook(db, 'Simyacı', 1);

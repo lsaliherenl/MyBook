@@ -42,7 +42,7 @@ import {
   type HoldNotice,
   type Tx,
 } from './holds.js';
-import { addDays, CIRCULATING_STATUSES, daysOverdue, overdueFine, reservationCode } from './rules.js';
+import { CIRCULATING_STATUSES, daysOverdue, dueDate, overdueFine, reservationCode } from './rules.js';
 
 const TX_OPTIONS = { timeout: 20_000, maxWait: 10_000 };
 
@@ -170,7 +170,7 @@ export class CirculationService {
 
       await tx.loan.update({
         where: { id: loanId },
-        data: { dueAt: addDays(loan.dueAt, settings.loanDays), renewCount: { increment: 1 } },
+        data: { dueAt: dueDate(loan.dueAt, settings.loanDays), renewCount: { increment: 1 } },
       });
       await tx.auditLog.create({ data: { actorId: actor.id, action: 'loan.renew', entityType: 'loan', entityId: loanId } });
     }, TX_OPTIONS);
@@ -215,7 +215,7 @@ export class CirculationService {
             memberId,
             reservationId: own?.id ?? null,
             checkedOutAt: now,
-            dueAt: addDays(now, settings.loanDays),
+            dueAt: dueDate(now, settings.loanDays),
             checkedOutById: actor.id,
           },
         });
@@ -238,7 +238,7 @@ export class CirculationService {
         });
         loanIds.push(loan.id);
       }
-      return { loanIds, codes: [...codes], dueAt: addDays(now, settings.loanDays) };
+      return { loanIds, codes: [...codes], dueAt: dueDate(now, settings.loanDays) };
     }, TX_OPTIONS);
 
     const loans: LoanDto[] = [];

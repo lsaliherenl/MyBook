@@ -1,5 +1,8 @@
 /** Pure circulation rules — no database, easy to unit test. */
 
+// Shared with the web app so the desk previews the same due date the API stores.
+export { dueDate } from '@mybook/shared';
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function addDays(date: Date, days: number): Date {

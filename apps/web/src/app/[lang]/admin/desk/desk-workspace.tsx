@@ -3,14 +3,15 @@
 import { Check, CircleCheck, Package, Printer, ScanBarcode, Wrench, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
-import type {
-  CheckoutManyResultDto,
-  DeskCopyDto,
-  DeskMemberDto,
-  DeskMemberMatchDto,
-  ReservationDto,
-  ReturnCondition,
-  ReturnResultDto,
+import {
+  dueDate,
+  type CheckoutManyResultDto,
+  type DeskCopyDto,
+  type DeskMemberDto,
+  type DeskMemberMatchDto,
+  type ReservationDto,
+  type ReturnCondition,
+  type ReturnResultDto,
 } from "@mybook/shared";
 import { AdminTopBar, type TopBarStaff } from "@/components/admin/admin-top-bar";
 import { BookCover } from "@/components/book-cover";
@@ -416,7 +417,7 @@ export function DeskWorkspace({
     const blocking = m.standing.blockedReason && BLOCKING.includes(m.standing.blockedReason) ? m.standing.blockedReason : null;
     const blocked = blocking && !(override && blocking === "fines_over_limit");
     const books = (count: number) => (count === 1 ? d.oneBook : format(d.booksN, { count: String(count) }));
-    const dueAt = done?.dueAt ?? (mounted ? new Date(Date.now() + loanDays * 86_400_000).toISOString() : null);
+    const dueAt = done?.dueAt ?? (mounted ? dueDate(new Date(), loanDays).toISOString() : null);
     const byCode = new Map<string, ReservationDto[]>();
     for (const r of reserved) byCode.set(r.code, [...(byCode.get(r.code) ?? []), r]);
 
