@@ -1,6 +1,7 @@
 # Claude Design Brifi — MyBook Kütüphane Sistemi
 
-> **Kullanım:** Claude Design'a ilk mesajda bu brifin tamamını ve `reference-home.webp` görselini birlikte ver.
+> **Kullanım:** Claude Design'a ilk mesajda bu brifin tamamını ve referans ana sayfa görselini (`reference-home.webp`) birlikte ver.
+> Referans görsel başkasına ait olduğu için depoda yok.
 > Sonra aşağıdaki **"Prompt sırası"** bölümündeki adımları tek tek iste. Hepsini tek seferde istemek kaliteyi düşürür.
 
 ---
